@@ -16,17 +16,19 @@ using System.IO;
 using System.Text;
 
 
-public static class GenCilAsText {
-  
+public static class GenCilAsText
+{
+
   private static String MODULE;
-  private static Stack  loopEndLabels;
+  private static Stack loopEndLabels;
 
 
   // --- provide lables ---
 
   private static int nextLabNr;
 
-  private static String NewLabel() {
+  private static String NewLabel()
+  {
     String label = "L" + nextLabNr;
     nextLabNr++;
     return label;
@@ -35,20 +37,26 @@ public static class GenCilAsText {
 
   // === generate CIL for declarations ===
 
-  private static void GenGlobConsts(StringBuilder sb) {
+  private static void GenGlobConsts(StringBuilder sb)
+  {
     Symbol sy = SymTab.CurSymbols();
-    while (sy != null) {
-      if (sy.kind == Symbol.Kind.constKind) {
+    while (sy != null)
+    {
+      if (sy.kind == Symbol.Kind.constKind)
+      {
         sb.Append("  .field public static literal ");
         GenType(sb, sy.type);
         sb.Append(NameList.NameOf(sy.spix) + " = ");
-        if (sy.type == Type.boolType) {
+        if (sy.type == Type.boolType)
+        {
           sb.Append("bool(");
           if (sy.val == 0)
             sb.Append("false)\n");
           else // sy.val != 0
             sb.Append("true)\n");
-        } else { // sy.type == intType
+        }
+        else
+        { // sy.type == intType
           sb.Append("int32(" + sy.val + ")\n");
         } // else
       } // if
@@ -56,10 +64,13 @@ public static class GenCilAsText {
     } // while
   } // GenGlobConsts
 
-  private static void GenGlobVars(StringBuilder sb) {
+  private static void GenGlobVars(StringBuilder sb)
+  {
     Symbol sy = SymTab.CurSymbols();
-    while (sy != null) {
-      if (sy.kind == Symbol.Kind.varKind) {
+    while (sy != null)
+    {
+      if (sy.kind == Symbol.Kind.varKind)
+      {
         sb.Append("  .field public static ");
         GenType(sb, sy.type);
         sb.Append(NameList.NameOf(sy.spix) + "\n");
@@ -68,18 +79,22 @@ public static class GenCilAsText {
     } // while
   } // GenGlobVars
 
-  private static void GenLocVars(StringBuilder sb, Symbol symbols) {
+  private static void GenLocVars(StringBuilder sb, Symbol symbols)
+  {
     Symbol sy = symbols;
     // skip parameters
-    while (sy != null && sy.kind == Symbol.Kind.parKind) {
+    while (sy != null && sy.kind == Symbol.Kind.parKind)
+    {
       sy = sy.next;
     } // while
     // generate local declarations for constants and variables
     Symbol firstConstOrVarSy = sy;
     int i = 0;
-    while ( sy != null) {
-      if (sy.kind == Symbol.Kind.constKind || 
-          sy.kind == Symbol.Kind.varKind) {
+    while (sy != null)
+    {
+      if (sy.kind == Symbol.Kind.constKind ||
+          sy.kind == Symbol.Kind.varKind)
+      {
         if (i == 0)
           sb.Append("    .locals init (\n      ");
         else
@@ -95,21 +110,25 @@ public static class GenCilAsText {
     } // while
     // generate initializations for constants
     sy = firstConstOrVarSy;
-    while (sy != null) {
+    while (sy != null)
+    {
       if (sy.kind == Symbol.Kind.constKind ||
-          sy.kind == Symbol.Kind.varKind && sy.init) {
+          sy.kind == Symbol.Kind.varKind && sy.init)
+      {
         if (sy.type.IsPtrType() && sy.val == 0)
           sb.Append("    ldnull\n");
         else
-          sb.Append("    ldc.i4 " + sy.val  + "\n");
+          sb.Append("    ldc.i4 " + sy.val + "\n");
         sb.Append("    stloc  " + sy.addr + "\n");
       } // if
       sy = sy.next;
     } // while
   } // GenLocVars
 
-  private static void GenType(StringBuilder sb, Type t) {
-    switch (t.kind) {
+  private static void GenType(StringBuilder sb, Type t)
+  {
+    switch (t.kind)
+    {
       case Type.Kind.voidKind:
         sb.Append("void ");
         break;
@@ -130,16 +149,20 @@ public static class GenCilAsText {
     } // switch
   } // GenType
 
-  private static void GenGlobFuncs(StringBuilder sb) {
+  private static void GenGlobFuncs(StringBuilder sb)
+  {
     Symbol sy = SymTab.CurSymbols();
-    while (sy != null) {
-      if (sy.kind == Symbol.Kind.funcKind && NameList.NameOf(sy.spix) != "main") {
+    while (sy != null)
+    {
+      if (sy.kind == Symbol.Kind.funcKind && NameList.NameOf(sy.spix) != "main")
+      {
         sb.Append("  .method public hidebysig static ");
         GenType(sb, sy.type);
         sb.Append(NameList.NameOf(sy.spix) + "(");
         Symbol parSy = sy.symbols;
         bool first = true;
-        while (parSy != null && parSy.kind == Symbol.Kind.parKind) {
+        while (parSy != null && parSy.kind == Symbol.Kind.parKind)
+        {
           if (first)
             sb.Append("\n      ");
           else
@@ -162,8 +185,9 @@ public static class GenCilAsText {
 
   // === generate CIL for expresssions ===
 
-  private static void GenLoadConstOperand(StringBuilder sb, LitOperand lo) {
-    if (lo.type.kind == Type.Kind.boolKind || 
+  private static void GenLoadConstOperand(StringBuilder sb, LitOperand lo)
+  {
+    if (lo.type.kind == Type.Kind.boolKind ||
         lo.type.kind == Type.Kind.intKind)
       sb.Append("    ldc.i4 " + lo.val + "\n");
     else if (lo.type.kind == Type.Kind.voidPtrKind &&
@@ -173,17 +197,21 @@ public static class GenCilAsText {
       throw new Exception("invalid const operand type");
   } // GenLoadConstOperand
 
-  private static void GenLoadVarOperand(StringBuilder sb, VarOperand vo) {
-    switch (vo.sy.kind) {
+  private static void GenLoadVarOperand(StringBuilder sb, VarOperand vo)
+  {
+    switch (vo.sy.kind)
+    {
       case Symbol.Kind.constKind:
         sb.Append("    ldc.i4 " + vo.sy.val + "\n");
         break;
       case Symbol.Kind.varKind:
-        if (vo.sy.level == 0) { // global scope
+        if (vo.sy.level == 0)
+        { // global scope
           sb.Append("    ldsfld ");
           GenType(sb, vo.sy.type);
           sb.Append(MODULE + "::" + NameList.NameOf(vo.sy.spix) + "\n");
-        } else if (vo.sy.level == 1) // function scope
+        }
+        else if (vo.sy.level == 1) // function scope
           sb.Append("    ldloc " + vo.sy.addr + "\n");
         else
           throw new Exception("invalid operand scope level");
@@ -196,14 +224,18 @@ public static class GenCilAsText {
     } // switch
   } // GenLoadVarOperand
 
-  private static void GenStoreVarOperand(StringBuilder sb, VarOperand vo) {
-    switch (vo.sy.kind) {
+  private static void GenStoreVarOperand(StringBuilder sb, VarOperand vo)
+  {
+    switch (vo.sy.kind)
+    {
       case Symbol.Kind.varKind:
-        if (vo.sy.level == 0) { // global scope
+        if (vo.sy.level == 0)
+        { // global scope
           sb.Append("    stsfld ");
           GenType(sb, vo.sy.type);
           sb.Append(MODULE + "::" + NameList.NameOf(vo.sy.spix) + "\n");
-        } else if (vo.sy.level == 1) // function scope
+        }
+        else if (vo.sy.level == 1) // function scope
           sb.Append("    stloc " + vo.sy.addr + "\n");
         else
           throw new Exception("invalid operand scope level");
@@ -216,9 +248,11 @@ public static class GenCilAsText {
     } // switch
   } // GenStoreVarOperand
 
-  private static void GenUnaryOperator(StringBuilder sb, UnaryOperator uo) {
+  private static void GenUnaryOperator(StringBuilder sb, UnaryOperator uo)
+  {
     GenExpr(sb, uo.e);
-    switch (uo.op) {
+    switch (uo.op)
+    {
       case UnaryOperator.Operation.notOp:
         sb.Append("    ldc.i4 1\n");
         sb.Append("    xor\n");
@@ -234,10 +268,12 @@ public static class GenCilAsText {
     } // switch
   } // GenUnaryOperator
 
-  private static void GenBinaryOperator(StringBuilder sb, BinaryOperator bo) {
+  private static void GenBinaryOperator(StringBuilder sb, BinaryOperator bo)
+  {
     GenExpr(sb, bo.left);
     if (bo.op == BinaryOperator.Operation.orOp ||
-        bo.op == BinaryOperator.Operation.andOp) {
+        bo.op == BinaryOperator.Operation.andOp)
+    {
       String label1 = NewLabel();
       if (bo.op == BinaryOperator.Operation.orOp)
         sb.Append("    brtrue " + label1 + "\n");
@@ -245,16 +281,19 @@ public static class GenCilAsText {
         sb.Append("    brfalse " + label1 + "\n");
       GenExpr(sb, bo.right);
       String label2 = NewLabel();
-      sb.Append("    br " + label2 +"\n");
+      sb.Append("    br " + label2 + "\n");
       sb.Append(label1 + ":\n");
       if (bo.op == BinaryOperator.Operation.orOp)
         sb.Append("    ldc.i4 1\n");
       else // bo.op == BinaryOperator.Operation.andOp
         sb.Append("    ldc.i4 0\n");
       sb.Append(label2 + ":\n");
-    } else {
+    }
+    else
+    {
       GenExpr(sb, bo.right);
-      switch (bo.op) {
+      switch (bo.op)
+      {
         case BinaryOperator.Operation.orOp:
           sb.Append("    // orOp\n");
           break;
@@ -305,11 +344,13 @@ public static class GenCilAsText {
       } // switch
     } // else
   } // GenBinaryOperator
-   
-  private static void GenArrIdxOperator(StringBuilder sb, ArrIdxOperator aio) {
+
+  private static void GenArrIdxOperator(StringBuilder sb, ArrIdxOperator aio)
+  {
     GenLoadVarOperand(sb, aio.arr);
     GenExpr(sb, aio.idx);
-    switch (aio.type.kind) {
+    switch (aio.type.kind)
+    {
       case Type.Kind.boolKind:
         sb.Append("    ldelem.i1\n");
         break;
@@ -321,9 +362,11 @@ public static class GenCilAsText {
     } // switch
   } // GenArrIdxOperator
 
-  private static void GenCall(StringBuilder sb, Symbol func, Expr apl) {
+  private static void GenCall(StringBuilder sb, Symbol func, Expr apl)
+  {
     Expr ap = apl;
-    while (ap != null) {
+    while (ap != null)
+    {
       GenExpr(sb, ap);
       ap = ap.next;
     } // while
@@ -332,7 +375,8 @@ public static class GenCilAsText {
     sb.Append(MODULE + "::" + NameList.NameOf(func.spix) + "(");
     Symbol fp = func.symbols;
     bool first = true;
-    while (fp != null && fp.kind == Symbol.Kind.parKind) {
+    while (fp != null && fp.kind == Symbol.Kind.parKind)
+    {
       if (first)
         sb.Append("\n        ");
       else
@@ -344,13 +388,16 @@ public static class GenCilAsText {
     sb.Append(")\n");
   } // GenCall
 
-  private static void GenFuncCallOperator(StringBuilder sb, FuncCallOperator fco) {
+  private static void GenFuncCallOperator(StringBuilder sb, FuncCallOperator fco)
+  {
     GenCall(sb, fco.func, fco.apl);
   } // GenFuncCallOperator
 
-  private static void GenNewOperator(StringBuilder sb, NewOperator no) {
+  private static void GenNewOperator(StringBuilder sb, NewOperator no)
+  {
     GenExpr(sb, no.noe);
-    switch (no.elemType.kind) {
+    switch (no.elemType.kind)
+    {
       case Type.Kind.boolKind:
         sb.Append("    newarr [mscorlib]System.Boolean\n");
         break;
@@ -362,8 +409,10 @@ public static class GenCilAsText {
     } // switch
   } // GenNewOperator
 
-  private static void GenExpr(StringBuilder sb, Expr e) {
-    switch (e.kind) {
+  private static void GenExpr(StringBuilder sb, Expr e)
+  {
+    switch (e.kind)
+    {
       case Expr.Kind.litOperandKind:
         GenLoadConstOperand(sb, (LitOperand)e);
         break;
@@ -390,14 +439,18 @@ public static class GenCilAsText {
     } // switch
   } // GenExpr
 
-  private static void GenLoadAddrOrVarOperand(StringBuilder sb, VarOperand vo) {
-    switch (vo.sy.kind) {
+  private static void GenLoadAddrOrVarOperand(StringBuilder sb, VarOperand vo)
+  {
+    switch (vo.sy.kind)
+    {
       case Symbol.Kind.varKind:
-        if (vo.sy.level == 0) { // global scope
+        if (vo.sy.level == 0)
+        { // global scope
           sb.Append("    ldsflda ");
           GenType(sb, vo.sy.type);
           sb.Append(MODULE + "::" + NameList.NameOf(vo.sy.spix) + "\n");
-        } else if (vo.sy.level == 1) // function scope
+        }
+        else if (vo.sy.level == 1) // function scope
           sb.Append("    ldloca " + vo.sy.addr + "\n");
         else
           throw new Exception("invalid operand scope level");
@@ -413,26 +466,31 @@ public static class GenCilAsText {
 
   // === generate CIL for statements ===
 
-  private static void GenBlockStat(StringBuilder sb, BlockStat s) {
+  private static void GenBlockStat(StringBuilder sb, BlockStat s)
+  {
     GenStatList(sb, s.statList);
   } // GenBlockStat
 
-  private static void GenIncStat(StringBuilder sb, IncStat s) {
+  private static void GenIncStat(StringBuilder sb, IncStat s)
+  {
     GenLoadVarOperand(sb, s.vo);
     sb.Append("    ldc.i4 1\n");
     sb.Append("    add\n");
     GenStoreVarOperand(sb, s.vo);
   } // GenIncStat
 
-  private static void GenDecStat(StringBuilder sb, DecStat s) {
+  private static void GenDecStat(StringBuilder sb, DecStat s)
+  {
     GenLoadVarOperand(sb, s.vo);
     sb.Append("    ldc.i4 1\n");
     sb.Append("    sub\n");
     GenStoreVarOperand(sb, s.vo);
   } // GenDecStat
 
-  private static void GenAssignStat(StringBuilder sb, AssignStat s) {
-    switch (s.lhs.kind) {
+  private static void GenAssignStat(StringBuilder sb, AssignStat s)
+  {
+    switch (s.lhs.kind)
+    {
       case Expr.Kind.varOperandKind:
         GenExpr(sb, s.rhs);
         GenStoreVarOperand(sb, (VarOperand)s.lhs);
@@ -442,7 +500,8 @@ public static class GenCilAsText {
         GenExpr(sb, aio.arr);
         GenExpr(sb, aio.idx);
         GenExpr(sb, s.rhs);
-        switch (aio.type.kind) {
+        switch (aio.type.kind)
+        {
           case Type.Kind.boolKind:
             sb.Append("    stelem.i1\n");
             break;
@@ -458,18 +517,21 @@ public static class GenCilAsText {
     } // switch
   } // GenAssignStat
 
-  private static void GenCallStat(StringBuilder sb, CallStat s) {
+  private static void GenCallStat(StringBuilder sb, CallStat s)
+  {
     GenCall(sb, s.func, s.apl);
     if (s.func.type.kind != Type.Kind.voidKind)
       sb.Append("    pop\n");
   } // GenCallStat
 
-  private static void GenIfStat(StringBuilder sb, IfStat s) {
+  private static void GenIfStat(StringBuilder sb, IfStat s)
+  {
     GenExpr(sb, s.cond);
     String label1 = NewLabel();
     sb.Append("    brfalse " + label1 + "\n");
     GenStatList(sb, s.thenStat);
-    if (s.elseStat != null) {
+    if (s.elseStat != null)
+    {
       String label2 = NewLabel();
       sb.Append("    br " + label2 + "\n");
       sb.Append(label1 + ":\n");
@@ -479,7 +541,8 @@ public static class GenCilAsText {
     sb.Append(label1 + ":\n");
   } // GenIfStat
 
-  private static void GenWhileStat(StringBuilder sb, WhileStat s) {
+  private static void GenWhileStat(StringBuilder sb, WhileStat s)
+  {
     String label1 = NewLabel();
     sb.Append(label1 + ":\n");
     GenExpr(sb, s.cond);
@@ -492,16 +555,19 @@ public static class GenCilAsText {
     sb.Append(label2 + ":\n");
   } // GenWhileStat
 
-  private static void GenBreakStat(StringBuilder sb) {
+  private static void GenBreakStat(StringBuilder sb)
+  {
     if (loopEndLabels.Count <= 0)
       throw new Exception("break with no loop around");
-    String label = (String) loopEndLabels.Peek();
+    String label = (String)loopEndLabels.Peek();
     sb.Append("    br " + label + "\n");
   } // GenBreakStat
 
-  private static void GenInputStat(StringBuilder sb, InputStat s) {
+  private static void GenInputStat(StringBuilder sb, InputStat s)
+  {
     GenLoadAddrOrVarOperand(sb, s.vo);
-    switch (s.vo.sy.type.kind) {
+    switch (s.vo.sy.type.kind)
+    {
       case Type.Kind.boolKind:
         sb.Append("    call void BasicIO::ReadFromCin(bool&)\n");
         break;
@@ -513,42 +579,56 @@ public static class GenCilAsText {
     } // switch
   } // GenInputStat
 
-  private static void GenOutputStat(StringBuilder sb, OutputStat s) { 
-    foreach (Object o in s.values) {
-      if (o is Expr) {
+  private static void GenOutputStat(StringBuilder sb, OutputStat s)
+  {
+    foreach (Object o in s.values)
+    {
+      if (o is Expr)
+      {
         Expr e = o as Expr;
         GenExpr(sb, e);
         sb.Append("    call void BasicIO::WriteToCout(");
         GenType(sb, e.type);
         sb.Append(")\n");
-      } else if (o is String) {
+      }
+      else if (o is String)
+      {
         String str = o as String;
-        if (str == "\n") {
+        if (str == "\n")
+        {
           sb.Append("    call void BasicIO::WriteEndlToCout()\n");
-        } else {
+        }
+        else
+        {
           sb.Append("    ldstr \"" + str + "\"\n");
           sb.Append("    call void BasicIO::WriteToCout(string)\n");
         } // else
-      } else
+      }
+      else
         throw new Exception("invalid value");
     } // foreach
   } // GenOutputStat
 
-  private static void GenDeleteStat(StringBuilder sb, DeleteStat s) {
+  private static void GenDeleteStat(StringBuilder sb, DeleteStat s)
+  {
     sb.Append("    ldnull\n");
     GenStoreVarOperand(sb, s.vo);
   } // GenDeleteStat
 
-  private static void GenReturnStat(StringBuilder sb, ReturnStat s) {
+  private static void GenReturnStat(StringBuilder sb, ReturnStat s)
+  {
     if (s.e != null)
       GenExpr(sb, s.e);
     sb.Append("    ret\n");
   } // GenReturnStat
 
-  private static void GenStatList(StringBuilder sb, Stat statList) {
+  private static void GenStatList(StringBuilder sb, Stat statList)
+  {
     Stat stat = statList;
-    while (stat != null) {
-      switch (stat.kind) {
+    while (stat != null)
+    {
+      switch (stat.kind)
+      {
         case Stat.Kind.emptyStatKind:
           sb.Append("    nop\n");
           break;
@@ -593,36 +673,41 @@ public static class GenCilAsText {
       } // switch
       stat = stat.next;
     } // while
- } //GenStatList
+  } //GenStatList
 
-  private static void GenFuncBody(StringBuilder sb, Symbol funcSy) {
+  private static void GenFuncBody(StringBuilder sb, Symbol funcSy)
+  {
     nextLabNr = 0;
     GenStatList(sb, funcSy.statList);
-    switch (funcSy.type.kind) {
-      case Type.Kind.voidKind: 
+    switch (funcSy.type.kind)
+    {
+      case Type.Kind.voidKind:
         sb.Append("    ret\n");
         break;
-      case Type.Kind.boolKind: 
+      case Type.Kind.boolKind:
       case Type.Kind.intKind:
         sb.Append("DummyReturn:\n");
-        sb.Append("    ldc.i4 0\n"); 
+        sb.Append("    ldc.i4 0\n");
         sb.Append("    ret\n");
         break;
-      case Type.Kind.boolPtrKind: 
-      case Type.Kind.intPtrKind: 
+      case Type.Kind.boolPtrKind:
+      case Type.Kind.intPtrKind:
         sb.Append("DummyReturn:\n");
-        sb.Append("    ldnull\n"); 
+        sb.Append("    ldnull\n");
         sb.Append("    ret\n");
         break;
       default:
         throw new Exception("invalid function type kind");
-      } // switch
+    } // switch
   } // GenFuncBody
 
-  private static void GenMainFuncBody(StringBuilder sb) {
+  private static void GenMainFuncBody(StringBuilder sb)
+  {
     Symbol sy = SymTab.CurSymbols();
-    while (sy != null) {
-      if (sy.kind == Symbol.Kind.funcKind && NameList.NameOf(sy.spix) == "main") {
+    while (sy != null)
+    {
+      if (sy.kind == Symbol.Kind.funcKind && NameList.NameOf(sy.spix) == "main")
+      {
         sb.Append("    .maxstack 100\n");
         GenLocVars(sb, sy.symbols);
         GenFuncBody(sb, sy);
@@ -632,32 +717,36 @@ public static class GenCilAsText {
     } // while
   } // GenMainFuncBody
 
-  private static void GenCctorBody(StringBuilder sb) {
+  private static void GenCctorBody(StringBuilder sb)
+  {
     sb.Append("    .maxstack 100\n");
     Symbol sy = SymTab.CurSymbols();
-    while (sy != null) {
-      if (sy.kind == Symbol.Kind.varKind && sy.init) {
-        sb.Append("    ldc.i4  " + sy.val  + "\n");
+    while (sy != null)
+    {
+      if (sy.kind == Symbol.Kind.varKind && sy.init)
+      {
+        sb.Append("    ldc.i4  " + sy.val + "\n");
         sb.Append("    stsfld ");
         GenType(sb, sy.type);
-        sb.Append(MODULE + "::"+ NameList.NameOf(sy.spix) + "\n");
+        sb.Append(MODULE + "::" + NameList.NameOf(sy.spix) + "\n");
       } // if
       sy = sy.next;
     } // while
     sb.Append("    ret\n");
   } // GenCctorBody
 
-  public static void GenerateCilFile(String path, String moduleName) {
+  public static void GenerateCilFile(String path, String moduleName)
+  {
 
     if (path.Length != 0 && path[path.Length - 1] != '\\')
       path = path + "\\";
 
-    MODULE    = moduleName;
+    MODULE = moduleName;
     loopEndLabels = new Stack();
 
-    StringBuilder GLOBALS   = new StringBuilder();
-    StringBuilder METHODS   = new StringBuilder();
-    StringBuilder MAINBODY  = new StringBuilder();
+    StringBuilder GLOBALS = new StringBuilder();
+    StringBuilder METHODS = new StringBuilder();
+    StringBuilder MAINBODY = new StringBuilder();
     StringBuilder CCTORBODY = new StringBuilder();
 
     GenGlobConsts(GLOBALS);
@@ -666,12 +755,13 @@ public static class GenCilAsText {
     GenMainFuncBody(MAINBODY);
     GenCctorBody(CCTORBODY);
 
-    try {
-      FileStream   ilFs = new FileStream(path + moduleName + ".il", FileMode.Create);
-      StreamWriter cil  = new StreamWriter(ilFs);
-      Template     t    = new Template(path, "CIL.frm");
+    try
+    {
+      FileStream ilFs = new FileStream(path + moduleName + ".il", FileMode.Create);
+      StreamWriter cil = new StreamWriter(ilFs);
+      Template t = new Template(path, "CIL.frm");
       cil.WriteLine(t.Instance(
-        new String[]{ "MODULE", "GLOBALS", "METHODS", "MAINBODY", "CCTORBODY" },
+        new String[] { "MODULE", "GLOBALS", "METHODS", "MAINBODY", "CCTORBODY" },
         new String[]{ MODULE,    
                       GLOBALS.ToString(),  
                       METHODS.ToString(), 
@@ -679,15 +769,18 @@ public static class GenCilAsText {
                       CCTORBODY.ToString()
                     }));
       cil.Close();
-    } catch (Exception e) {
+    }
+    catch (Exception e)
+    {
       Console.WriteLine(e);
     } // catch
 
   } // GenerateCilFile
 
 
-  public static void GenerateAssembly(string path, string moduleName) {
-  //-----------------------------------|---------------------------------------
+  public static void GenerateAssembly(string path, string moduleName)
+  {
+    //-----------------------------------|---------------------------------------
 
     String ilFileName;
     if (path == "")
@@ -699,7 +792,7 @@ public static class GenCilAsText {
 
     Console.WriteLine("emitting   CIL to \"" + ilFileName + "\" ...");
     GenCilAsText.GenerateCilFile(path, moduleName);
-  
+
     String exeFileName;
     if (path == "")
       exeFileName = moduleName + ".exe";
@@ -710,36 +803,40 @@ public static class GenCilAsText {
 
     String winDir = Environment.GetEnvironmentVariable("windir");
     String dotNetFwDir = winDir + "\\Microsoft.NET\\Framework\\v4.0.30319\\";
-    if (!File.Exists(dotNetFwDir + "ilasm.exe")) {
+    if (!File.Exists(dotNetFwDir + "ilasm.exe"))
+    {
       Console.WriteLine("ilasm.exe not found in \"" + dotNetFwDir);
       Console.WriteLine("  assembling \"" + ilFileName + "\" has to be done manually");
       return;
     } // if
 
     Console.WriteLine("assembling CIL to \"" + exeFileName + "\" ...");
-    ProcessStartInfo psi = new ProcessStartInfo {
-       FileName = dotNetFwDir + "ilasm.exe",
-       Arguments = "/QUIET " + ilFileName,
-       UseShellExecute = false,
-       RedirectStandardError = true,
-       RedirectStandardOutput = true
+    ProcessStartInfo psi = new ProcessStartInfo
+    {
+      FileName = dotNetFwDir + "ilasm.exe",
+      Arguments = "/QUIET " + ilFileName,
+      UseShellExecute = false,
+      RedirectStandardError = true,
+      RedirectStandardOutput = true
     }; // new
 
-    using (Process p = Process.Start(psi)) {
+    using (Process p = Process.Start(psi))
+    {
       StreamReader stderr = p.StandardError;
       String line = stderr.ReadLine();
-      while (line != null) {
+      while (line != null)
+      {
         Console.WriteLine(line);
         line = stderr.ReadLine();
       } // while
       p.WaitForExit();
     } // using
-    
+
     if (!File.Exists(exeFileName))
       Console.WriteLine("some errors during assembly detected");
-      
+
   } // GenerateAssembly
-    
+
 
 #if TEST_GENCILASTEXT
 
