@@ -1,4 +1,6 @@
 void main(){
+  int a,b,c,i;
+  
   switch(1){
     
   }
@@ -7,13 +9,14 @@ void main(){
     case 1 : {break;}
   
   }
-  
-  switch(1+2){
-    default: {break;}
-  }
-  
-  switch(1+b / c){
-    default: {break; break; break;}
+    
+  switch(1 + b / c) {
+    case 2: 
+    default: {
+       break; 
+       break; 
+       break;
+    }
   }
   
   switch(a){

@@ -474,33 +474,36 @@ public class MiniCppSem {
           NT_WhileStat(out s);
           break;
         case 4:
-          NT_BreakStat(out s);
+          NT_SwitchStat(out s);
           break;
         case 5:
-          NT_InputStat(out s);
+          NT_BreakStat(out s);
           break;
         case 6:
-          NT_OutputStat(out s);
+          NT_InputStat(out s);
           break;
         case 7:
-          NT_DeleteStat(out s);
+          NT_OutputStat(out s);
           break;
         case 8:
+          NT_DeleteStat(out s);
+          break;
+        case 9:
           NT_ReturnStat(out s);
           break;
-        case 9: // SEM
+        case 10: // SEM
           sp = new SrcPos();
 
           break;
-        case 10:
+        case 11:
           NT_Block(out locSymbols,
                  out statList);
           break;
-        case 11: // SEM
+        case 12: // SEM
           s = new BlockStat(sp, statList);
 
           break;
-        case 12: // SEM
+        case 13: // SEM
           s = new EmptyStat(null);
 
           break;
@@ -668,6 +671,63 @@ public class MiniCppSem {
       } // switch
     } // for
   } // NT_WhileStat
+
+  private static void NT_SwitchStat(out Stat s) {
+    Expr e = null; s = null;
+    for (;;) {
+      switch (Syn.Interpret()) {
+        case 0:
+          return;
+        case 1:
+          NT_Expr(out e);
+          break;
+        case 2: // SEM
+          loopLevel++;
+          break;
+        case 3:
+          NT_CaseList(out s);
+          break;
+        case 4:
+          NT_DefaultPart(out s);
+          break;
+        case 5: // SEM
+          loopLevel--;
+          break;
+      } // switch
+    } // for
+  } // NT_SwitchStat
+
+  private static void NT_CaseList(out Stat s) {
+    int val = 0; s = null;
+    for (;;) {
+      switch (Syn.Interpret()) {
+        case 0:
+          return;
+        case 1:
+          Lex.GETnumberAttr(out val);
+          break;
+        case 2:
+          NT_Stat(out s);
+          break;
+      } // switch
+    } // for
+  } // NT_CaseList
+
+  private static void NT_DefaultPart(out Stat s) {
+    s = null;
+    for (;;) {
+      switch (Syn.Interpret()) {
+        case 0:
+          return;
+        case 1:
+          NT_Stat(out s);
+          break;
+        case 2:
+          NT_Stat(out s);
+          break;
+      } // switch
+    } // for
+  } // NT_DefaultPart
 
   private static void NT_BreakStat(out Stat s) {
     s = null;

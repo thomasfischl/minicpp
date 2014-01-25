@@ -26,7 +26,7 @@
    Stat =             ( IncStat | DecStat | AssignStat
                       | CallStat | IfStat | WhileStat | BreakStat
                       | InputStat | OutputStat | DeleteStat | ReturnStat
-                      | Block | ';' ) .
+                      | Block | SwitchStat | ';' ) .
    IncStat =          ident '++' ';' .
    DecStat =          ident '--' ';' .
    AssignStat =       ident [ '[' Expr ']'  ] '=' Expr ';' .
@@ -41,6 +41,9 @@
                       { '<<' ( Expr | string | 'endl' ) } ';' .
    DeleteStat =       'delete' '[' ']' ident ';' .
    ReturnStat =       'return' [ Expr ] ';' .
+   SwitchStat =       'switch' '(' Expr ')' '{' CaseList [ DefaultPart ] '}'.
+   CaseList =         'case' number ':' Stat {Stat} CaseList | EPS.
+   DefaultPart=       'default' ':' Stat {Stat}.
   -----------------------------------------------------------------------
    Expr =             OrExpr .
    OrExpr =           AndExpr { '||' AndExpr } .
@@ -61,7 +64,7 @@
                       |  '(' Expr ')' .
   -----------------------------------------------------------------------
    
-=========================================================================*/
+/*=========================================================================*/
 COMPILER MiniCpp
 
   SEM <<
@@ -115,6 +118,9 @@ KEYWORDS                          /*  1 - 15 */
   'true'.
   'void'.
   'while'.
+  'switch'.
+  'case'.
+  'default'.
 
 
 TOKENS                            /* 16 - 42 */
@@ -123,7 +129,7 @@ TOKENS                            /* 16 - 42 */
   '('.   ')'.   '['.   ']'.   '{'.   '}'.    
   '!'.   '||'.  '&&'.  
   '=='.  '!='.  '<'.   '<='.   '>'.  '>='.  
-  '<<'.  '>>'.  ','.   '='.    ';'.   
+  '<<'.  '>>'.  ','.   '='.    ';'.  ':'.
 
 
 TOKEN CLASSES                     /* 43 - 45 */
@@ -179,6 +185,10 @@ NONTERMINALS
   OutputStat<<out Stat s>>.
   DeleteStat<<out Stat s>>.
   ReturnStat<<out Stat s>>.
+  
+  SwitchStat<<out Stat s>>.
+  CaseList<<out Stat s>>.
+  DefaultPart<<out Stat s>>.
   
   Expr<<out Expr e>>.
   OrExpr<<out Expr oe>>.
@@ -500,6 +510,7 @@ RULES
     ( IncDecAssignOrCallStat<<out s>>
     | IfStat<<out s>>
     | WhileStat<<out s>>
+    | SwitchStat<<out s>>
     | BreakStat<<out s>>
     | InputStat<<out s>>
     | OutputStat<<out s>>
@@ -628,6 +639,24 @@ RULES
                                     loopLevel--;
                                   >>
     .
+/*-------------------------------|---------------------------------------*/
+
+SwitchStat<<out Stat s>> = LOCAL<< Expr e = null; s = null; >>
+
+  'switch' '(' Expr<<out e>> ')'  SEM <<loopLevel++;>>
+  '{' { CaseList<<out s>> } [DefaultPart<<out s>>] '}' SEM <<loopLevel--;>>
+  .
+
+CaseList<<out Stat s>> = LOCAL<<int val = 0; s = null;>>
+  'case' number<<out val>> ':' { Stat<<out s>> }.
+  
+
+DefaultPart<<out Stat s>> =   LOCAL<< s = null; >>
+   'default' ':' Stat<<out s >> { Stat<<out s>> } .
+
+
+
+
 /*-------------------------------|---------------------------------------*/
   BreakStat<<out Stat s>> =       LOCAL <<
                                     s = null;
