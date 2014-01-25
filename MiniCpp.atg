@@ -1,0 +1,979 @@
+/* MiniCpp.atg:                                           HDO, 2006-08-28
+   -----------                                            V.2  2006-12-19
+   
+   Attributed grammar for the (soon) famous MiniCpp Compiler.
+   
+   Simple MinCpp Syntax with several LL(1) conflicts
+   (RULES section in the implementation is a transformed version
+    with the dangling else conflict left only):
+  
+  -----------------------------------------------------------------------
+   MiniCpp =          { ConstDecl | VarDef | FuncDecl | FuncDef } .
+  -----------------------------------------------------------------------
+   ConstDecl =        'const' Type ident Init ';' .
+   Init =             '=' ( false | true | [ '+' | '-' ] number ) .
+   VarDef =           Type  [ '*' ] ident [ Init ]
+                      { ',' [ '*' ] ident [ Init ] } ';' .
+   FuncDecl =         FuncHead ';' .
+   FuncDef =          FuncHead Block .
+   FuncHead =         Type [ '*' ] ident '(' [ FormParList ] ')' .
+   FormParList =      ( 'void' |       
+                              Type [ '*' ] ident [ '[' ']' ]
+                        { ',' Type [ '*' ] ident [ '[' ']' ] } ) .
+   Type =             'void' | 'bool' | 'int' .
+   Block =            '{' { ConstDecl | VarDef | Stat } '}' .
+  -----------------------------------------------------------------------
+   Stat =             ( IncStat | DecStat | AssignStat
+                      | CallStat | IfStat | WhileStat | BreakStat
+                      | InputStat | OutputStat | DeleteStat | ReturnStat
+                      | Block | ';' ) .
+   IncStat =          ident '++' ';' .
+   DecStat =          ident '--' ';' .
+   AssignStat =       ident [ '[' Expr ']'  ] '=' Expr ';' .
+   CallStat =         ident '(' [ ActParList ] ')' ';' .
+   ActParList =       Expr { ',' Expr } .
+   IfStat =           'if' '(' Expr ')' Stat [ 'else' Stat ] .
+   WhileStat =        'while' '(' Expr ')' Stat .
+   BreakStat =        'break' ';' .
+   InputStat =        'cin'  '>>' ident ';' .
+   OutputStat =       'cout' '<<' 
+                             ( Expr | string | 'endl' ) 
+                      { '<<' ( Expr | string | 'endl' ) } ';' .
+   DeleteStat =       'delete' '[' ']' ident ';' .
+   ReturnStat =       'return' [ Expr ] ';' .
+  -----------------------------------------------------------------------
+   Expr =             OrExpr .
+   OrExpr =           AndExpr { '||' AndExpr } .
+   AndExpr            RelExpr { '&&' RelExpr } .
+   RelExpr =          SimpleExpr
+                      [ ( '==' | '!=' | '<' | '<=' | '>' | '>=' ) 
+                        SimpleExpr ] .
+   SimpleExpr =       [ '+' | '-' ] 
+                      Term    { ( '+' | '-' )        Term    } .
+   Term =             NotFact { ( '*' | '/' | '%' )  NotFact } .
+   NotFact =          [ '!' ] Fact .
+   Fact =              'false' | 'true'
+                      | number  
+                      | ident [   ( '[' Expr        ']' )
+                                | ( '(' [ ActParList ] ')' )
+                              ]
+                      | 'new' Type '[' Expr ']'
+                      |  '(' Expr ')' .
+  -----------------------------------------------------------------------
+   
+=========================================================================*/
+COMPILER MiniCpp
+
+  SEM <<
+  
+    private static Symbol curFuncSy  = null;
+    private static int    loopLevel  = 0;
+  
+    private static void SemErr(String msg) {
+      Errors.SemError(MiniCppLex.tokenLine, MiniCppLex.tokenCol, msg);
+    } // SemErr
+  
+  >>
+
+CHARACTER SETS
+/*===============================|=======================================*/
+  letter      = 'A' .. 'Z' + 
+                'a' .. 'z' + 
+                '_' .             /* underscore is treated as letter*/
+  digit       = '0' .. '9'.
+  stringChar  = ' ' .. '!' + 
+                '#' .. '~' .
+  whiteSpace  =  EOL + CHR(9) IGNORE .
+
+
+COMMENTS
+/*===============================|=======================================*/
+  FROM '/*' TO '*/'.
+  FROM '//' TO EOL.
+
+
+/*SPECIAL                         (*  0 -  0 *)                          */
+/*===============================|=======================================*/
+/*EOF.                                                                   */
+
+
+KEYWORDS                          /*  1 - 15 */
+/*===============================|=======================================*/
+  'bool'.
+  'break'.
+  'cin'.
+  'const'.
+  'cout'.
+  'delete'.
+  'else'.
+  'endl'.
+  'false'.
+  'if'.
+  'int'.
+  'new'.
+  'return'.
+  'true'.
+  'void'.
+  'while'.
+
+
+TOKENS                            /* 16 - 42 */
+/*===============================|=======================================*/
+  '+'.   '-'.   '*'.   '/'.   '%'.   '++'.  '--'.
+  '('.   ')'.   '['.   ']'.   '{'.   '}'.    
+  '!'.   '||'.  '&&'.  
+  '=='.  '!='.  '<'.   '<='.   '>'.  '>='.  
+  '<<'.  '>>'.  ','.   '='.    ';'.   
+
+
+TOKEN CLASSES                     /* 43 - 45 */
+/*===============================|=======================================*/
+  ident<<out int spix>> =
+      letter  
+    { letter | digit 
+    }                             LEX <<
+                                    spix = NameList.SpixOf(tokenStr);
+                                  >>
+    .
+/*-------------------------------|---------------------------------------*/
+  number <<out int val>> =
+      digit
+    { digit
+    }                             LEX <<
+                                    val = Convert.ToInt32(tokenStr);
+                                  >>
+    .
+    
+  string<<out String str>> =      // string literals may contain
+    '"'                           // all printable characters, but not '"'
+    {                             // backslash '\' has no special meaning,
+      stringChar                  // therefore: '\n', ... are not supported
+    } 
+    '"'                        
+                                  LEX <<
+                                    str = tokenStr.Substring(1, tokenStr.Length - 2);
+                                  >>
+    .
+
+NONTERMINALS 
+/*===============================|=======================================*/
+
+  MiniCpp.
+  
+  ConstDecl.
+  Init<<out Stat s, ref Symbol sy>>.
+  VarDefOrFuncDeclOrDef.
+  VarDef<<out Stat s>>.
+  VarDefRest<<out Stat s, Symbol sy, bool ptr>>.
+  FormParList<<Symbol funcSy>>.
+  Type<<out Type t>>.
+  
+  Block<<out Symbol locSymbols, out Stat statList>>.
+  Stat<<out Stat s>>.
+  IncDecAssignOrCallStat<<out Stat s>>.
+  ActParList<<out Expr e>>.
+  IfStat<<out Stat s>>.
+  WhileStat<<out Stat s>>.
+  BreakStat<<out Stat s>>.
+  InputStat<<out Stat s>>.
+  OutputStat<<out Stat s>>.
+  DeleteStat<<out Stat s>>.
+  ReturnStat<<out Stat s>>.
+  
+  Expr<<out Expr e>>.
+  OrExpr<<out Expr oe>>.
+  AndExpr<<out Expr ae>>.
+  RelExpr<<out Expr re>>.
+  SimpleExpr<<out Expr se>>.
+  Term<<out Expr t>>.
+  NotFact<<out Expr nf>>.
+  Fact<<out Expr f>>.
+
+
+RULES
+/*===============================|=======================================*/
+  MiniCpp =                       
+                                  SEM <<
+                                    NameList.Init(true);
+                                    SymTab.Init();
+                                  >>
+    { ConstDecl
+    | VarDefOrFuncDeclOrDef
+    }                             SEM <<
+                                    if (!SymTab.MainFuncDefined())
+                                      SemErr("no main func defined");
+                                  >>
+    .
+/*-------------------------------|---------------------------------------*/
+  ConstDecl =                     LOCAL <<
+                                    Type t = null;
+                                    Symbol sy = null;
+                                    Stat s = null;
+                                    int spix = 0;
+                                  >>
+    'const'
+  /*[ '*' ] no constants of pointer types allowed*/
+    Type<<out t>>                 
+    ident<<out spix>>             SEM <<
+                                    sy = SymTab.Insert(spix, Symbol.Kind.constKind,
+                                                       t, false);
+                                  >>
+    Init<<out s, ref sy>>         /* s = null for constans*/
+    ';'
+    .
+/*-------------------------------|---------------------------------------*/
+  Init<<out Stat s,
+        ref Symbol sy>> =         LOCAL <<
+                                    int fact = 1, number = 0;
+                                    s = null;
+                                  >>
+    '='                           
+    ( 'false'                     SEM <<
+                                    if (sy.type != Type.boolType)
+                                      SemErr("invalid type");
+                                    sy.val = 0;
+                                  >>
+    | 'true'                      SEM <<
+                                    if (sy.type != Type.boolType)
+                                      SemErr("invalid type");
+                                    sy.val = 1;
+                                  >>
+    | [ '+' 
+      | '-'                       SEM <<
+                                    fact = -1;
+                                  >>
+      ] 
+      number<<out number>>        SEM <<
+                                    if (sy.type.IsPtrType()) {
+                                      if (number != 0)
+                                        SemErr("invalid value");
+                                    } else if (sy.type.kind != Type.Kind.intKind)
+                                      SemErr("invalid type");
+                                    sy.val = fact * number;
+                                  >>
+    )                             SEM <<
+                                    if (sy.kind == Symbol.Kind.varKind && loopLevel > 0)
+                                      s = new AssignStat(new SrcPos(), 
+                                            new VarOperand(sy), 
+                                            new LitOperand(sy.type, sy.val));
+                                  >>
+    .
+  
+/*-------------------------------|---------------------------------------*/
+  VarDefOrFuncDeclOrDef =         LOCAL <<
+                                    Type t = null;
+                                    Symbol funcSy = null, sy = null, locSymbols = null;
+                                    Stat statList = null, s = null;
+                                    int spix = 0; 
+                                    bool ptr = false;
+                                  >>
+    Type<<out t>>
+    [ '*'                         SEM <<
+                                    ptr = true;
+                                  >>
+    ] 
+    ident<<out spix>>
+    ( ( /*VarDef*/                SEM <<
+                                    sy = SymTab.Insert(spix, Symbol.Kind.varKind,
+                                                       t, ptr);
+                                  >>
+        VarDefRest<<out s,        /*deliveres s = null*/
+                    t, sy, ptr>>
+      )
+    | ( /*FuncDeclOrDef*/         SEM <<
+                                    funcSy = SymTab.Lookup(spix);
+                                    if (funcSy == null)
+                                      funcSy = SymTab.Insert(spix, 
+                                                      Symbol.Kind.funcKind, t, ptr);
+                                    else if (funcSy.kind != Symbol.Kind.undefKind) {
+                                      if (funcSy.kind == Symbol.Kind.funcKind && 
+                                          funcSy.defined)
+                                         SemErr("multiple function decl or def");
+                                      else if (funcSy.kind != Symbol.Kind.funcKind) { 
+                                         SemErr("invalid redefinition");
+                                         funcSy.kind = Symbol.Kind.undefKind;
+                                      } // else
+                                    } // else
+                                    SymTab.EnterScope();
+                                    ptr = false;
+                                  >>
+        '('                       
+          [ FormParList<<funcSy>>
+          ]
+        ')' 
+        ( /*FuncDecl*/            SEM <<
+                                    if (funcSy.kind == Symbol.Kind.funcKind) {
+                                      if (funcSy.hadFuncDecl)
+                                        SemErr("multiple function declaration");
+                                      else {
+                                        funcSy.hadFuncDecl = true;
+                                        funcSy.funcDeclParList = SymTab.CurSymbols();
+                                      } // else
+                                    } // if
+                                    SymTab.LeaveScope();
+                                  >>
+          ';'   
+        | /*FuncDef*/             SEM <<
+                                    funcSy.symbols = SymTab.CurSymbols();
+                                    funcSy.FuncDef(); // do decl and def match?
+                                    curFuncSy = funcSy;
+                                    loopLevel = 0;
+                                  >>
+          Block<<out locSymbols, 
+                 out statList>>
+                                  SEM <<
+                                    funcSy.symbols  = locSymbols;
+                                    funcSy.statList = statList;
+                                    SymTab.LeaveScope();
+                                  >>
+        )
+      )
+    )
+    .
+/*-------------------------------|---------------------------------------*/
+  VarDef<<out Stat s>> =          LOCAL <<
+                                    Type t = null;
+                                    Symbol sy = null;
+                                    int spix = 0; 
+                                    bool ptr = false;
+                                    s = null;
+                                  >>
+    Type<<out t>>
+    [ '*'                         SEM <<
+                                    ptr = true;
+                                  >>
+    ] 
+    ident<<out spix>>             SEM <<
+                                    sy = SymTab.Insert(spix, Symbol.Kind.varKind, 
+                                                       t, ptr);
+                                  >>
+    VarDefRest<<out s, t, sy, ptr>>
+    .
+/*-------------------------------|---------------------------------------*/
+  VarDefRest<<out Stat s,
+              Type t,
+              Symbol sy, 
+              bool ptr>> =        LOCAL <<
+                                    int spix = 0; 
+                                    Stat statList = null, s2 = null;
+                                    s = null;
+                                  >>
+    [ Init<<out statList, 
+            ref sy>>              SEM <<
+                                    sy.init = true;
+                                  >>
+    ]                             SEM <<
+                                    ptr = false;
+                                  >>
+    { ',' 
+      [ '*'                       SEM <<
+                                    ptr = true;
+                                  >>
+      ] 
+      ident<<out spix>>           SEM <<
+                                    sy = SymTab.Insert(spix, Symbol.Kind.varKind, 
+                                                       t, ptr);
+                                  >>
+      [ Init<<out s2, 
+              ref sy>>            SEM <<
+                                    sy.init = true;
+                                    if (statList == null)
+                                      statList = s2;
+                                    else { // append s2 to statList
+                                      s = statList;
+                                      while (s.next != null) {
+                                        s = s.next;
+                                      } // while
+                                      s.next = s2;
+                                    } // else
+                                      
+                                  >>
+      ]                           SEM <<
+                                    ptr = false;
+                                  >>
+    }                             SEM <<
+                                    s = statList;
+                                  >>
+    ';'
+    .
+/*-------------------------------|---------------------------------------*/
+  FormParList<<Symbol funcSy>> =  LOCAL <<
+                                    int spix = 0; bool ptr = false;
+                                    Type t = null;
+                                  >>
+    Type<<out t>>
+    (
+      EPS                         SEM <<
+                                    if (t.kind != Type.Kind.voidKind)
+                                      SemErr("void expected");
+                                  >>
+    |
+      (
+        [ '*'                     SEM <<
+                                    ptr = true;
+                                  >>
+        ] 
+        ident<<out spix>>           
+        [ '[' ']'                 SEM <<
+                                    if (ptr)
+                                      SemErr("pointer to array not supported");
+                                    ptr = true;
+                                  >>
+        ] 
+                                  SEM <<
+                                    SymTab.Insert(spix, Symbol.Kind.parKind, 
+                                                  t, ptr);
+                                    ptr = false;
+                                  >>
+        { ','
+          Type<<out t>>
+          [ '*'                   SEM <<
+                                    ptr = true;
+                                  >>
+          ] 
+          ident<<out spix>>         
+          [ '[' ']'               SEM <<
+                                    if (ptr)
+                                      SemErr("pointer to array not supported");
+                                    ptr = true;
+                                  >>
+          ] 
+                                  SEM <<
+                                    SymTab.Insert(spix, Symbol.Kind.parKind, 
+                                                  t, ptr);
+                                    ptr = false;
+                                  >>
+        }
+      )
+    )
+    .
+/*-------------------------------|---------------------------------------*/
+  Type<<out Type t>> =            LOCAL <<
+                                    t = null;
+                                  >>
+      'void'                      SEM <<
+                                    t = Type.voidType;
+                                  >>
+    | 'bool'                      SEM <<
+                                    t = Type.boolType;
+                                  >>
+    | 'int'                       SEM <<
+                                    t = Type.intType;
+                                  >>
+    .
+/*-------------------------------|---------------------------------------*/
+  Block<<out Symbol locSymbols, 
+         out Stat   statList>> =  LOCAL <<
+                                    locSymbols = null;
+                                    Stat last = null, s = null;
+                                    statList = null; 
+                                  >>
+    '{'                           
+      { ( ConstDecl 
+        | VarDef<<out s>>         /*possibly returns list of assignment stats*/
+        | Stat<<out s>>
+        )                         SEM <<
+                                    if (s != null) {
+                                      if (statList == null)
+                                        statList = s;
+                                      else // statList != null
+                                        last.next = s;
+                                      while (s.next != null) {
+                                        s = s.next;
+                                      } // while
+                                      last = s;
+                                      s = null;
+                                    } // if
+                                  >>
+      }                           SEM<<
+                                    locSymbols = SymTab.CurSymbols();
+                                  >>
+    '}'                           
+    .
+/*-------------------------------|---------------------------------------*/
+  Stat<<out Stat s>> =            LOCAL <<
+                                    Symbol locSymbols = null;
+                                    Stat statList = null;
+                                    SrcPos sp = null;
+                                    s = null;
+                                  >>
+    ( IncDecAssignOrCallStat<<out s>>
+    | IfStat<<out s>>
+    | WhileStat<<out s>>
+    | BreakStat<<out s>>
+    | InputStat<<out s>>
+    | OutputStat<<out s>>
+    | DeleteStat<<out s>>
+    | ReturnStat<<out s>>
+    |                              SEM <<
+                                     sp = new SrcPos();
+                                   >>
+      Block<<out locSymbols, 
+             out statList>>
+                                   SEM << 
+                                     s = new BlockStat(sp, statList);
+                                   >>
+    | ';'                          SEM <<
+                                     s = new EmptyStat(null);
+                                   >>
+    )                              
+    .
+/*-------------------------------|---------------------------------------*/
+  IncDecAssignOrCallStat<<out Stat s>> = 
+                                  LOCAL <<
+                                    int spix = 0;
+                                    Symbol sy = null;
+                                    Expr lhs = null, e = null;
+                                    SrcPos sp = null;
+                                    s = null;
+                                  >>
+    ident<<out spix>>             SEM <<
+                                    sy = SymTab.SymbolOf(spix, Symbol.Kind.varKind, 
+                                                               Symbol.Kind.parKind,
+                                                               Symbol.Kind.funcKind);
+                                  >>
+    ( 
+      ( /*AssignStat*/            
+        (  '++'                   SEM <<
+                                    s = new IncStat(sp, new VarOperand(sy));
+                                  >>
+        |  '--'                   SEM <<
+                                    s = new DecStat(sp, new VarOperand(sy));
+                                  >>
+        |  ( EPS                 SEM <<
+                                    lhs = new VarOperand(sy);
+                                  >>
+           | '['                  SEM <<
+                                    sp = new SrcPos();
+                                  >>
+               Expr<<out e>>
+             ']'                  SEM <<
+                                    lhs = new ArrIdxOperator(sp, new VarOperand(sy), e);
+                                  >>
+           ) 
+           '='                    SEM <<
+                                    sp = new SrcPos();
+                                  >>
+           Expr<<out e>>          SEM <<
+                                    s = new AssignStat(sp, lhs, e);
+                                  >>
+        )
+      )
+    | ( /*CallStat*/              
+       '('                        SEM <<
+                                    sp = new SrcPos();
+                                  >>
+          [ ActParList<<out e>>
+          ]
+        ')'                       SEM <<
+                                    s = new CallStat(sp, sy, e);
+                                  >>
+      )
+    )
+    ';'
+    .
+/*-------------------------------|---------------------------------------*/
+  ActParList<<out Expr apl>> =    LOCAL <<
+                                    Expr e = null, last = null;
+                                    apl = null;
+                                  >>
+    Expr<<out e>>                 SEM <<
+                                    apl = e;
+                                    last = apl;
+                                  >>
+    { ',' 
+      Expr<<out e>>               SEM <<
+                                    last.next = e;
+                                    last = e;
+                                  >>
+    }
+    .
+/*-------------------------------|---------------------------------------*/
+  IfStat<<out Stat s>> =          LOCAL <<
+                                    Expr e = null;
+                                    Stat thenStat = null, elseStat = null;
+                                    SrcPos sp = null;
+                                    s = null;
+                                  >>
+    'if'                          SEM <<
+                                    sp = new SrcPos();
+                                  >>
+    '(' 
+      Expr<<out e>>
+    ')'
+    Stat<<out thenStat>>
+    [ 'else' /*LL(1) conflict: the famous dangling else problem*/
+       Stat<<out elseStat>>              
+    ]                            SEM <<
+                                   s = new IfStat(sp, e, thenStat, elseStat);
+                                 >>
+    .
+/*-------------------------------|---------------------------------------*/
+  WhileStat<<out Stat s>> =       LOCAL <<
+                                    Expr e = null;
+                                    Stat body = null;
+                                    SrcPos sp = null;
+                                    s = null;
+                                  >>
+    'while'                       SEM <<
+                                    sp = new SrcPos();
+                                  >>
+    '(' 
+      Expr<<out e>>
+    ')'                           SEM <<
+                                    loopLevel++;
+                                  >>
+    Stat<<out body>>              SEM <<
+                                    s = new WhileStat(sp, e, body);
+                                    loopLevel--;
+                                  >>
+    .
+/*-------------------------------|---------------------------------------*/
+  BreakStat<<out Stat s>> =       LOCAL <<
+                                    s = null;
+                                  >>
+    'break'                       SEM <<
+                                    if (loopLevel <= 0)
+                                      SemErr("no loop around");
+                                    s = new BreakStat(new SrcPos());
+                                  >>
+    ';'
+    .
+/*-------------------------------|---------------------------------------*/
+  InputStat<<out Stat s>> =       LOCAL <<
+                                    int spix = 0;
+                                    Symbol sy = null;
+                                    SrcPos sp = null;
+                                    s = null;
+                                  >>
+    'cin'                         SEM <<
+                                    sp = new SrcPos();
+                                  >>
+    '>>' 
+    ident<<out spix>>             SEM <<
+                                    sy = SymTab.SymbolOf(spix, Symbol.Kind.varKind, 
+                                                               Symbol.Kind.parKind);
+                                    s = new InputStat(sp, new VarOperand(sy));
+                                  >>
+    ';'
+    .
+/*-------------------------------|---------------------------------------*/
+  OutputStat<<out Stat s>> =      LOCAL <<
+                                    Expr e = null;
+                                    String str = null;
+                                    SrcPos sp = null;
+                                    System.Collections.ArrayList values = 
+                                      new System.Collections.ArrayList();
+                                    s = null;
+                                  >>
+    'cout'                        SEM <<
+                                    sp = new SrcPos();
+                                  >>
+    '<<' 
+    ( Expr<<out e>>               SEM <<
+                                    values.Add(e);
+                                  >>
+    | string<<out str>>           SEM <<
+                                    values.Add(str);
+                                  >>
+    | 'endl'                      SEM <<
+                                    values.Add("\n");
+                                  >>
+    )
+    { '<<'
+      ( Expr<<out e>>             SEM <<
+                                    values.Add(e);
+                                  >>
+      | string<<out str>>         SEM <<
+                                    values.Add(str);
+                                  >>
+      | 'endl'                    SEM <<
+                                    values.Add("\n");
+                                  >>
+      )
+    }                             SEM <<
+                                    s = new OutputStat(sp, values);
+                                  >>
+    ';'
+    .
+/*-------------------------------|---------------------------------------*/
+  DeleteStat<<out Stat s>> =      LOCAL <<
+                                    int spix = 0;
+                                    Symbol sy = null;
+                                    SrcPos sp = null;
+                                    s = null;
+                                  >>
+    'delete'                      SEM <<
+                                    sp = new SrcPos();
+                                  >>
+    '[' ']'
+    ident<<out spix>>             SEM <<
+                                    sy = SymTab.SymbolOf(spix, Symbol.Kind.varKind, 
+                                                               Symbol.Kind.parKind);
+                                    s = new DeleteStat(sp, new VarOperand(sy));
+                                  >>
+    ';'
+    .
+
+/*-------------------------------|---------------------------------------*/
+  ReturnStat<<out Stat s>> =      LOCAL <<
+                                    Expr e = null;
+                                    SrcPos sp = null;
+                                    s = null;
+                                  >>
+    'return'                      SEM <<
+                                    sp = new SrcPos();
+                                  >>
+    [ 
+      Expr<<out e>>
+    ]                             SEM <<
+                                    s = new ReturnStat(sp, curFuncSy, e);
+                                  >>
+    ';'
+    .
+/*-------------------------------|---------------------------------------*/
+  Expr<<out Expr e>> =            LOCAL <<
+                                    e = null;
+                                  >>
+    OrExpr<<out e>>
+    .
+  
+/*-------------------------------|---------------------------------------*/
+  OrExpr<<out Expr oe>> =         LOCAL <<
+                                    Expr ae = null;
+                                    SrcPos sp = null;
+                                    BinaryOperator.Operation binOp = 
+                                      BinaryOperator.Operation.undefOp;
+                                    oe = null;
+                                  >>
+    AndExpr<<out ae>>             SEM <<
+                                    oe = ae;
+                                  >>
+    { '||'                        SEM <<
+                                    binOp = BinaryOperator.Operation.orOp;
+                                    sp = new SrcPos();
+                                  >>
+      AndExpr<<out ae>>           SEM <<
+                                    oe = new BinaryOperator(sp, binOp, oe, ae);
+                                  >>
+    }
+    .
+/*-------------------------------|---------------------------------------*/
+  AndExpr<<out Expr ae>> =        LOCAL <<
+                                    Expr re = null;
+                                    SrcPos sp = null;
+                                    BinaryOperator.Operation binOp = 
+                                      BinaryOperator.Operation.undefOp;
+                                    ae = null;
+                                  >>
+    RelExpr<<out re>>             SEM <<
+                                    ae = re;
+                                  >>
+    { '&&'                        SEM <<
+                                    binOp = BinaryOperator.Operation.andOp;
+                                    sp = new SrcPos();
+                                  >>
+      RelExpr<<out re>>           SEM <<
+                                    ae = new BinaryOperator(sp, binOp, ae, re);
+                                  >>
+    }
+    .
+/*-------------------------------|---------------------------------------*/
+  RelExpr<<out Expr re>> =        LOCAL <<
+                                    Expr se = null;
+                                    SrcPos sp = null;
+                                    BinaryOperator.Operation binOp = 
+                                      BinaryOperator.Operation.undefOp;
+                                    re = null;
+                                  >>
+    SimpleExpr<<out se>>          SEM <<
+                                    re = se;
+                                  >>
+    [ ( '=='                      SEM <<
+                                    binOp = BinaryOperator.Operation.eqOp;
+                                    sp = new SrcPos();
+                                  >>
+      | '!='                      SEM <<
+                                    binOp = BinaryOperator.Operation.neOp;
+                                    sp = new SrcPos();
+                                  >>
+      | '<'                       SEM <<
+                                    binOp = BinaryOperator.Operation.ltOp;
+                                    sp = new SrcPos();
+                                  >>
+      | '<='                      SEM <<
+                                    binOp = BinaryOperator.Operation.leOp;
+                                    sp = new SrcPos();
+                                  >>
+      | '>'                       SEM <<
+                                    binOp = BinaryOperator.Operation.gtOp;
+                                    sp = new SrcPos();
+                                  >>
+      | '>='                      SEM <<
+                                    binOp = BinaryOperator.Operation.geOp;
+                                    sp = new SrcPos();
+                                  >>
+      ) 
+      SimpleExpr<<out se>>        SEM <<
+                                    re = new BinaryOperator(sp, binOp, re, se);
+                                  >>
+    ]                             
+    .
+/*-------------------------------|---------------------------------------*/
+  SimpleExpr<<out Expr se>> =     LOCAL <<
+                                    Expr t = null;
+                                    SrcPos sp = null;
+                                    UnaryOperator.Operation unOp = 
+                                      UnaryOperator.Operation.undefOp;
+                                    BinaryOperator.Operation binOp = 
+                                      BinaryOperator.Operation.undefOp;
+                                    se = null;
+                                  >>
+    [ '+'                         SEM <<
+                                    unOp = UnaryOperator.Operation.posOp;
+                                    sp = new SrcPos();
+                                  >>
+    | '-'                         SEM <<
+                                    unOp = UnaryOperator.Operation.negOp;
+                                    sp = new SrcPos();
+                                  >>
+    ]
+    Term<<out t>>                 SEM <<
+                                    if (unOp != UnaryOperator.Operation.undefOp)
+                                      se = new UnaryOperator(sp, unOp, t);
+                                    else
+                                      se = t;
+                                  >>
+    { ( '+'                       SEM <<
+                                    binOp = BinaryOperator.Operation.addOp;
+                                    sp = new SrcPos();
+                                  >>
+      | '-'                       SEM <<
+                                    binOp = BinaryOperator.Operation.subOp;
+                                    sp = new SrcPos();
+                                  >>
+      ) 
+      Term<<out t>>               SEM <<
+                                    se = new BinaryOperator(sp, binOp, se, t);
+                                  >>
+    }
+    .
+/*-------------------------------|---------------------------------------*/
+  Term<<out Expr t>> =            LOCAL <<
+                                    Expr f = null;
+                                    SrcPos sp = null;
+                                    BinaryOperator.Operation binOp = 
+                                      BinaryOperator.Operation.undefOp;
+                                    t = null;
+                                  >>
+    NotFact<<out f>>              SEM <<
+                                    t = f;
+                                  >>
+    { ( '*'                       SEM <<
+                                    binOp = BinaryOperator.Operation.mulOp;
+                                    sp = new SrcPos();
+                                  >>
+      | '/'                       SEM <<
+                                    binOp = BinaryOperator.Operation.divOp;
+                                    sp = new SrcPos();
+                                  >>
+      | '%'                       SEM <<
+                                    binOp = BinaryOperator.Operation.modOp;
+                                    sp = new SrcPos();
+                                  >>
+      ) 
+      NotFact<<out f>>            SEM <<
+                                    t = new BinaryOperator(sp, binOp, t, f);
+                                  >>
+    } 
+    .
+/*-------------------------------|---------------------------------------*/
+  NotFact<<out Expr nf>> =        LOCAL <<
+                                    SrcPos sp = null;
+                                    bool hasNot = false;
+                                    nf = null;
+                                  >>
+    [ '!'                         SEM <<
+                                    hasNot = true;
+                                    sp = new SrcPos();
+                                  >>
+    ]
+    Fact<<out nf>>                SEM <<
+                                    if (hasNot)
+                                      nf = new UnaryOperator(sp, 
+                                        UnaryOperator.Operation.notOp, nf);
+                                  >>
+    .
+/*-------------------------------|---------------------------------------*/
+  Fact<<out Expr f>> =            LOCAL <<
+                                    Expr e = null;
+                                    SrcPos sp = null;
+                                    Symbol sy = null;
+                                    int spix = 0; int number = 0;
+                                    Type t = null;
+                                    f = null;
+                                  >>
+      'false'                     SEM <<
+                                    f = new LitOperand(Type.boolType, 0);
+                                  >>
+    | 'true'                      SEM <<
+                                    f = new LitOperand(Type.boolType, 1);
+                                  >>
+    | number<<out number>>        SEM <<
+                                    f = new LitOperand(Type.intType, number);
+                                  >>
+    | ident<<out spix>>           SEM <<
+                                    sp = new SrcPos();
+                                  >>
+      ( EPS /*variable*/          SEM <<
+                                    sy = SymTab.SymbolOf(spix, Symbol.Kind.constKind, 
+                                                               Symbol.Kind.varKind, 
+                                                               Symbol.Kind.parKind);
+                                    f = new VarOperand(sy);
+                                  >>
+      | 
+        ( /*array index*/         SEM <<
+                                    sy = SymTab.SymbolOf(spix, Symbol.Kind.varKind, 
+                                                               Symbol.Kind.parKind);
+                                  >>
+          '['                     SEM <<
+                                    sp = new SrcPos();
+                                  >>
+             Expr<<out e>> 
+          ']'                     SEM <<
+                                    f = new ArrIdxOperator(sp, new VarOperand(sy), e);
+                                  >>
+         )
+      |
+        ( /*function call*/       SEM <<
+                                    sy = SymTab.SymbolOf(spix, Symbol.Kind.funcKind);
+                                  >>
+          '(' [ ActParList<<out e>> 
+              ]
+          ')'                     SEM <<
+                                    f = new FuncCallOperator(sp, sy, e);
+                                  >>
+        )
+      ) 
+    | 'new'                       SEM <<
+                                    sp = new SrcPos();
+                                  >>
+      Type<<out t>> 
+      '[' 
+        Expr<<out e>> 
+      ']'                         SEM <<
+                                    f = new NewOperator(sp, t, e);
+                                  >>
+    | '(' 
+        Expr<<out e>>             SEM <<
+                                    f = e;
+                                  >>
+       ')'
+    .
+/*-------------------------------|---------------------------------------*/
+
+END MiniCpp.
+
+
+/* End of MiniCpp.atg
+=========================================================================*/
