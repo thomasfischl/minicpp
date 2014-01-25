@@ -673,45 +673,89 @@ public class MiniCppSem {
   } // NT_WhileStat
 
   private static void NT_SwitchStat(out Stat s) {
-    Expr e = null; s = null;
+    Expr e = null;
+    SrcPos sp = null;
+    s = null;
+    Stat defaultStat = null;
+    CaseStat caseStat = null;
+    CaseStat currStat = null;
+    CaseStat tmpCaseStat = null;
+
     for (;;) {
       switch (Syn.Interpret()) {
         case 0:
           return;
-        case 1:
+        case 1: // SEM
+          sp = new SrcPos();
+          break;
+        case 2:
           NT_Expr(out e);
           break;
-        case 2: // SEM
+        case 3: // SEM
           loopLevel++;
           break;
-        case 3:
-          NT_CaseList(out s);
-          break;
         case 4:
-          NT_DefaultPart(out s);
+          NT_CaseStat(out tmpCaseStat);
           break;
         case 5: // SEM
+          if(currStat == null) {
+             caseStat = tmpCaseStat;
+             currStat = tmpCaseStat;
+          } else {
+             currStat.next = tmpCaseStat;
+             currStat = tmpCaseStat;
+          }
+
+          break;
+        case 6:
+          NT_DefaultPart(out defaultStat);
+          break;
+        case 7: // SEM
           loopLevel--;
+          s = new SwitchStat(sp, e, caseStat, defaultStat);
+
           break;
       } // switch
     } // for
   } // NT_SwitchStat
 
-  private static void NT_CaseList(out Stat s) {
-    int val = 0; s = null;
+  private static void NT_CaseStat(out CaseStat caseStat) {
+    int val = 0;
+    Stat stat = null;
+    Stat tmpStat = null;
+    Stat currStat = null;
+    caseStat = null;
+    SrcPos sp = null;
+
     for (;;) {
       switch (Syn.Interpret()) {
         case 0:
           return;
-        case 1:
-          Lex.GETnumberAttr(out val);
+        case 1: // SEM
+          sp = new SrcPos();
           break;
         case 2:
-          NT_Stat(out s);
+          Lex.GETnumberAttr(out val);
+          break;
+        case 3:
+          NT_Stat(out tmpStat);
+          break;
+        case 4: // SEM
+          if(currStat == null) {
+             stat = tmpStat;
+             currStat = tmpStat;
+          } else {
+             currStat.next = tmpStat;
+             currStat = tmpStat;
+          }
+
+          break;
+        case 5: // SEM
+          caseStat = new CaseStat(sp, val, stat);
           break;
       } // switch
     } // for
-  } // NT_CaseList
+  } // NT_CaseStat
 
   private static void NT_DefaultPart(out Stat s) {
     s = null;

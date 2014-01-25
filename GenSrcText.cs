@@ -112,6 +112,28 @@ public class GenSrcText {
         WriteStatList(w_s.body);
         DecIndent();
         break;
+      case Stat.Kind.switchStatKind:
+        SwitchStat ss = (SwitchStat)stat;
+        genMcpp.WriteLine(Indent() + "switch (" + ss.e + ") {");
+        IncIndent();
+        WriteStatList(ss.caseStat);
+        if (ss.defaultStat != null)
+        {
+          genMcpp.WriteLine(Indent() + "default:");
+          IncIndent();
+          WriteStat(ss.defaultStat);
+          DecIndent();
+        }
+        DecIndent();
+        genMcpp.WriteLine(Indent() + "}");
+        break;
+      case Stat.Kind.caseStatKind:
+        CaseStat cs = (CaseStat)stat;
+        genMcpp.WriteLine(Indent() + "case " + cs.val + ":" );
+        IncIndent();
+        WriteStatList(cs.stat);
+        DecIndent();
+        break;
       case Stat.Kind.breakStatKind:
         genMcpp.WriteLine(Indent() + "break;");
         break;

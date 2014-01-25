@@ -672,18 +672,18 @@ public class SwitchStat : Stat
 {
 
   public Expr e;
-  public Stat cases;
-  public Stat defaultStmt;
+  public Stat caseStat;
+  public Stat defaultStat;
 
-  public SwitchStat(SrcPos sp, Expr e, Stat cases, Stat defaultStmt)
+  public SwitchStat(SrcPos sp, Expr e, Stat caseStat, Stat defaultStat)
     : base(Stat.Kind.switchStatKind, sp)
   {
     this.e = e;
-    this.cases = cases;
-    this.defaultStmt = defaultStmt;
+    this.caseStat = caseStat;
+    this.defaultStat = defaultStat;
 
     Dictionary<int, Stat> caseDic = new Dictionary<int, Stat>();
-    var s = cases;
+    var s = caseStat;
     while (s != null)
     {
       CaseStat curCase = s as CaseStat;
@@ -717,9 +717,11 @@ public class CaseStat : Stat
   public int val;
   public Stat stat;
 
-  public CaseStat(SrcPos sp, int val)
+  public CaseStat(SrcPos sp, int val, Stat stat)
     : base(Stat.Kind.caseStatKind, sp)
   {
+    this.val = val;
+    this.stat = stat;
   } // CaseStat
 
 } // CaseStat

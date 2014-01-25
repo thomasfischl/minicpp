@@ -187,7 +187,7 @@ NONTERMINALS
   ReturnStat<<out Stat s>>.
   
   SwitchStat<<out Stat s>>.
-  CaseList<<out Stat s>>.
+  CaseStat<<out CaseStat caseStat>>.
   DefaultPart<<out Stat s>>.
   
   Expr<<out Expr e>>.
@@ -641,22 +641,66 @@ RULES
     .
 /*-------------------------------|---------------------------------------*/
 
-SwitchStat<<out Stat s>> = LOCAL<< Expr e = null; s = null; >>
-
-  'switch' '(' Expr<<out e>> ')'  SEM <<loopLevel++;>>
-  '{' { CaseList<<out s>> } [DefaultPart<<out s>>] '}' SEM <<loopLevel--;>>
-  .
-
-CaseList<<out Stat s>> = LOCAL<<int val = 0; s = null;>>
-  'case' number<<out val>> ':' { Stat<<out s>> }.
+SwitchStat<<out Stat s>> = LOCAL<< 
+                                    Expr e = null;
+                                    SrcPos sp = null;                                    
+                                    s = null;
+                                    Stat defaultStat = null;
+                                    CaseStat caseStat = null;
+                                    CaseStat currStat = null;
+                                    CaseStat tmpCaseStat = null;                                   
+                                >>
+  'switch'                 SEM <<  sp = new SrcPos();  >>
+  '(' Expr<<out e>> ')'    SEM <<  loopLevel++;  >>
+  '{' 
+      { 
+        CaseStat<<out tmpCaseStat>>  SEM <<
+                                             if(currStat == null) {
+                                                caseStat = tmpCaseStat;
+                                                currStat = tmpCaseStat;
+                                             } else {
+                                                currStat.next = tmpCaseStat;
+                                                currStat = tmpCaseStat;
+                                             }
+                                         >>
+      } 
+      [DefaultPart<<out defaultStat>>] 
+  '}' 
   
-
+  SEM <<  
+          loopLevel--;
+          s = new SwitchStat(sp, e, caseStat, defaultStat);         
+      >>
+  
+  .
+/*-------------------------------|---------------------------------------*/
+CaseStat<<out CaseStat caseStat>> = LOCAL<< 
+                                            int val = 0; 
+                                            Stat stat = null;
+                                            Stat tmpStat = null;
+                                            Stat currStat = null;
+                                            caseStat = null;
+                                            SrcPos sp = null;
+                                         >>
+  'case'                            SEM <<sp = new SrcPos(); >>
+  number<<out val>> ':' 
+  { 
+    Stat<<out tmpStat>>  SEM <<
+                                 if(currStat == null) {
+                                    stat = tmpStat;
+                                    currStat = tmpStat;
+                                 } else {
+                                    currStat.next = tmpStat;
+                                    currStat = tmpStat;
+                                 }
+                             >>
+  }
+  SEM << caseStat = new CaseStat(sp, val, stat); >>
+.
+/*-------------------------------|---------------------------------------*/  
 DefaultPart<<out Stat s>> =   LOCAL<< s = null; >>
-   'default' ':' Stat<<out s >> { Stat<<out s>> } .
-
-
-
-
+   'default' ':' Stat<<out s >> { Stat<<out s>> } 
+   .
 /*-------------------------------|---------------------------------------*/
   BreakStat<<out Stat s>> =       LOCAL <<
                                     s = null;
