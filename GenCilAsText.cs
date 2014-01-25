@@ -555,6 +555,63 @@ public static class GenCilAsText
     sb.Append(label2 + ":\n");
   } // GenWhileStat
 
+  private static void GenSwitchStat(StringBuilder sb, SwitchStat s)
+  {
+    if (s.caseStat == null && s.defaultStat == null)
+    {
+      return;
+    }
+
+    GenExpr(sb, s.e);
+
+    var defaultLabel = NewLabel();
+    var endOfSwitchLabel = NewLabel();
+
+    var caseLabels = new System.Collections.Generic.Dictionary<Stat, string>();
+    var caseStat = s.caseStat;
+
+    while (caseStat != null)
+    {
+      var caseLabel = NewLabel();
+      caseLabels.Add(caseStat, caseLabel);
+
+      sb.AppendFormat("    dup \n");
+      sb.AppendFormat("    ldc.i4 {0} \n", ((CaseStat)caseStat).val);
+      sb.AppendFormat("    beq.s  {0} \n", caseLabel);
+      sb.AppendFormat("\n");
+      caseStat = caseStat.next;
+    }
+
+    if (s.defaultStat != null)
+    {
+      sb.AppendLine("    br.s   " + defaultLabel);
+    }
+    else
+    {
+      sb.AppendLine("    br.s   " + endOfSwitchLabel);
+    }
+
+    loopEndLabels.Push(endOfSwitchLabel);
+
+    caseStat = s.caseStat;
+    while (caseStat != null)
+    {
+      sb.AppendLine(caseLabels[caseStat] + ": ");
+      GenStatList(sb, ((CaseStat)caseStat).stat);
+      caseStat = caseStat.next;
+    }
+
+    if (s.defaultStat != null)
+    {
+      sb.AppendLine(defaultLabel + ": ");
+      GenStatList(sb, s.defaultStat);
+    }
+
+    loopEndLabels.Pop();
+    sb.AppendLine(endOfSwitchLabel + ": ");
+
+  } //GenSwitchStat
+
   private static void GenBreakStat(StringBuilder sb)
   {
     if (loopEndLabels.Count <= 0)
@@ -652,6 +709,9 @@ public static class GenCilAsText
           break;
         case Stat.Kind.whileStatKind:
           GenWhileStat(sb, (WhileStat)stat);
+          break;
+        case Stat.Kind.switchStatKind:
+          GenSwitchStat(sb, (SwitchStat)stat);
           break;
         case Stat.Kind.breakStatKind:
           GenBreakStat(sb);

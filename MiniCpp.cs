@@ -6,8 +6,7 @@
 // *** start: not in Main.frm ***
 
 #define GEN_SRC          // (en|dis)able gen. of source text (with symbol table dump)
-
-#undef GEN_CIL_AS_TEXT  // (en|dis)able CIL text generation and assembling to exe
+#define GEN_CIL_AS_TEXT  // (en|dis)able CIL text generation and assembling to exe
 #undef GEN_CIL_REF_EMIT // (en|dis)able CIL generation with Reflection.Emit
 
 #undef VERIFY_ASSEMBLY  // (en|dis)able CIL verification with PEVerify.exe

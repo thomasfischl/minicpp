@@ -1,13 +1,17 @@
 void main(){
-  int a,b,c,i;
+  int a = 3;
+  int b = 1;
+  int c = 1;
+  int i;
   
   switch(1){
-    
   }
 
   switch(1 + 2){
     case 1 : {break;}
-  
+    case 3 : 
+       cout << "Case 3!!!" << endl; 
+       break;
   }
     
   switch(1 + b / c) {
@@ -26,7 +30,9 @@ void main(){
   }
   
   switch(4){
-    case 4: i = 0;
+    case 4: 
+        i = 0;
+        cout << "Case 4: " << i << endl; 
     default: {break; break; break;}
   }  
 
