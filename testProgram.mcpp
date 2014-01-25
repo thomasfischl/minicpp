@@ -1,0 +1,31 @@
+void main(){
+  switch(1){
+    
+  }
+
+  switch(1 + 2){
+    case 1 : {break;}
+  
+  }
+  
+  switch(1+2){
+    default: {break;}
+  }
+  
+  switch(1+b / c){
+    default: {break; break; break;}
+  }
+  
+  switch(a){
+    case 1: break;
+    case 2: a = 3;
+    case 3: b = 10 + 4 * 2; break;
+    default: {break; break; break;}
+  }
+  
+  switch(4){
+    case 4: i = 0;
+    default: {break; break; break;}
+  }  
+
+}
