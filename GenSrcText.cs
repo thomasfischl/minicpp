@@ -121,7 +121,7 @@ public class GenSrcText {
         {
           genMcpp.WriteLine(Indent() + "default:");
           IncIndent();
-          WriteStat(ss.defaultStat);
+          WriteStatList(ss.defaultStat);
           DecIndent();
         }
         DecIndent();

@@ -759,6 +759,9 @@ public class MiniCppSem {
 
   private static void NT_DefaultPart(out Stat s) {
     s = null;
+    Stat tmpStat = null;
+    Stat currStat = null;
+
     for (;;) {
       switch (Syn.Interpret()) {
         case 0:
@@ -766,8 +769,14 @@ public class MiniCppSem {
         case 1:
           NT_Stat(out s);
           break;
-        case 2:
-          NT_Stat(out s);
+        case 2: // SEM
+          currStat = s;
+          break;
+        case 3:
+          NT_Stat(out tmpStat);
+          break;
+        case 4: // SEM
+          currStat.next = tmpStat; currStat = tmpStat;
           break;
       } // switch
     } // for

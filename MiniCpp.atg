@@ -698,8 +698,16 @@ CaseStat<<out CaseStat caseStat>> = LOCAL<<
   SEM << caseStat = new CaseStat(sp, val, stat); >>
 .
 /*-------------------------------|---------------------------------------*/  
-DefaultPart<<out Stat s>> =   LOCAL<< s = null; >>
-   'default' ':' Stat<<out s >> { Stat<<out s>> } 
+DefaultPart<<out Stat s>> =   LOCAL<< 
+                                        s = null; 
+                                        Stat tmpStat = null;
+                                        Stat currStat = null;
+                                   >>
+   'default' ':' 
+   Stat<<out s >>           SEM<< currStat = s; >>
+   { 
+      Stat<<out tmpStat>>   SEM<< currStat.next = tmpStat; currStat = tmpStat; >>
+   } 
    .
 /*-------------------------------|---------------------------------------*/
   BreakStat<<out Stat s>> =       LOCAL <<
