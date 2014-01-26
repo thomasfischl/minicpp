@@ -199,7 +199,7 @@ public static class GenCilAsText
         lo.type.kind == Type.Kind.intKind)
       sb.Append("    ldc.i4 " + lo.val + "\n");
     else if (lo.type.kind == Type.Kind.doubleKind)
-      sb.Append("    ldc.r8 " + lo.dblVal + "\n");
+      sb.Append("    ldc.r8 " + Convert.ToString(lo.dblVal, System.Globalization.CultureInfo.InvariantCulture.NumberFormat) + "\n");
     else if (lo.type.kind == Type.Kind.voidPtrKind &&
              lo.val == 0)
       sb.Append("    ldnull\n");

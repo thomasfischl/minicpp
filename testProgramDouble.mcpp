@@ -1,3 +1,19 @@
+double addMethod(double a, double b){
+  return a + b;
+}
+
+double subMethod(double a, double b){
+  return a - b;
+}
+
+double mulMethod(double a, double b){
+  return a * b;
+}
+
+double divMethod(double a, double b){
+  return a / b;
+}
+
 void main(){
   double a = 10.2;
   double b = 23.5;
@@ -13,8 +29,10 @@ void main(){
   
   cin >> e;
   cout << "e: " << e << endl;
+  
+  cout << "1.1 + 2.2 = " << addMethod( 1.1, 2.2) << endl;
+  cout << "2.2 - 1.1 = " << subMethod( 2.2, 1.1) << endl;
+  cout << "1.5 * 2.0 = " << mulMethod( 1.5, 2.0) << endl;
+  cout << "3.0 / 2.0 = " << divMethod( 3.0, 2.0) << endl;
 }
 
-double addMethod(double a, double b){
-  return a + b;
-}

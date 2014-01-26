@@ -1,0 +1,37 @@
+int addMethod(int a, int b){
+  return a + b;
+}
+
+int subMethod(int a, int b){
+  return a - b;
+}
+
+int mulMethod(int a, int b){
+  return a * b;
+}
+
+int divMethod(int a, int b){
+  return a / b;
+}
+
+void main(){
+  int a = 10;
+  int b = 23;
+  int c = 2;
+  int d = 3;
+  int e;
+  
+  cout << "a: " << a << endl;
+  cout << "b: " << b << endl;
+  cout << "c: " << c << endl;
+  cout << "d: " << d << endl;
+  
+  cin >> e;
+  cout << "e: " << e << endl;
+  
+  cout << "1 + 2 = " << addMethod( 1, 2) << endl;
+  cout << "2 - 1 = " << subMethod( 2, 1) << endl;
+  cout << "1 * 2 = " << mulMethod( 1, 2) << endl;
+  cout << "3 / 2 = " << divMethod( 3, 2) << endl;
+}
+

@@ -113,6 +113,11 @@ public class LitOperand : Operand
       return /* "(" + type + ")" + */  val.ToString() +
         base.ToString();
     }
+    else if (type == Type.doubleType)
+    {
+      return dblVal.ToString(System.Globalization.CultureInfo.InvariantCulture.NumberFormat) +
+        base.ToString();
+    }
     else if (type == Type.voidPtrType)
     { // val == 0
       return /* "(" + type + ")" + */ val.ToString() +
@@ -363,7 +368,7 @@ public class ArrIdxOperator : Operator
       Errors.SemError(sp.line, sp.col, "invalid array type");
       return;
     } // if
-    if (idx.type != Type.intType)
+    if (idx.type != Type.intType && idx.type != Type.doubleType)
     {
       Errors.SemError(sp.line, sp.col, "invalid index type");
       return;

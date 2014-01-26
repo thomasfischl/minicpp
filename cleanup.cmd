@@ -18,3 +18,9 @@ del testProgramDouble.il
 del testProgramDouble.text.exe
 del testProgramDouble.text.il
 del testProgramDouble_Gen.mcpp
+
+del testProgramInt.emit.exe
+del testProgramInt.il
+del testProgramInt.text.exe
+del testProgramInt.text.il
+del testProgramInt_Gen.mcpp

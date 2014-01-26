@@ -188,7 +188,7 @@ public static class GenCilByRefEmit {
         lo.type.kind == Type.Kind.intKind)
       ilGenerator.Emit(OpCodes.Ldc_I4, lo.val);
     else if (lo.type.kind == Type.Kind.doubleKind)
-      ilGenerator.Emit(OpCodes.Ldc_R8, lo.val);
+      ilGenerator.Emit(OpCodes.Ldc_R8, lo.dblVal);
     else if (lo.type.kind == Type.Kind.voidPtrKind &&
              lo.val == 0)
       ilGenerator.Emit(OpCodes.Ldnull);
