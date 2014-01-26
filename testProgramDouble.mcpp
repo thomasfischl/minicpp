@@ -1,0 +1,20 @@
+void main(){
+  double a = 10.2;
+  double b = 23.5;
+  double c = 2.71e0;
+  double d = 2.71E0;
+  //double d = 1E3;
+  double e;
+  
+  cout << "a: " << a << endl;
+  cout << "b: " << b << endl;
+  cout << "c: " << c << endl;
+  cout << "d: " << d << endl;
+  
+  cin >> e;
+  cout << "e: " << e << endl;
+}
+
+double add(double a, double b){
+  return a + b;
+}

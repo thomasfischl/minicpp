@@ -166,8 +166,16 @@ TOKEN CLASSES                     /* 43 - 45 */
     { digit }
     '.'
     digit
-    { digit }                     LEX <<
-                                    val = Convert.ToDouble(tokenStr);
+    { digit }
+    [
+      ('E' | 'e')
+      ['+' | '-']
+      digit
+      { digit }
+    ]
+    
+                                  LEX <<
+                                    val = Convert.ToDouble(tokenStr, System.Globalization.CultureInfo.InvariantCulture.NumberFormat);
                                   >>
     .
 NONTERMINALS 
@@ -244,6 +252,7 @@ RULES
   Init<<out Stat s,
         ref Symbol sy>> =         LOCAL <<
                                     int fact = 1, number = 0;
+                                    double dblNumber = 0;
                                     s = null;
                                   >>
     '='                           
@@ -262,6 +271,7 @@ RULES
                                     fact = -1;
                                   >>
       ] 
+      [
       number<<out number>>        SEM <<
                                     if (sy.type.IsPtrType()) {
                                       if (number != 0)
@@ -270,6 +280,16 @@ RULES
                                       SemErr("invalid type");
                                     sy.val = fact * number;
                                   >>
+      |
+      dblNumber<<out dblNumber>>     SEM <<
+                                    if (sy.type.IsPtrType()) {
+                                      if (dblNumber != 0)
+                                        SemErr("invalid value");
+                                    } else if (sy.type.kind != Type.Kind.doubleKind)
+                                      SemErr("invalid type");
+                                    sy.dblVal = fact * dblNumber;
+                                  >>
+      ]
     )                             SEM <<
                                     if (sy.kind == Symbol.Kind.varKind && loopLevel > 0)
                                       s = new AssignStat(new SrcPos(), 
@@ -478,6 +498,9 @@ RULES
                                   >>
     | 'int'                       SEM <<
                                     t = Type.intType;
+                                  >>
+    | 'double'                    SEM <<
+                                    t = Type.doubleType;
                                   >>
     .
 /*-------------------------------|---------------------------------------*/
@@ -1000,6 +1023,7 @@ DefaultPart<<out Stat s>> =   LOCAL<<
                                     SrcPos sp = null;
                                     Symbol sy = null;
                                     int spix = 0; int number = 0;
+                                    double dblNumber = 0;
                                     Type t = null;
                                     f = null;
                                   >>
@@ -1011,6 +1035,9 @@ DefaultPart<<out Stat s>> =   LOCAL<<
                                   >>
     | number<<out number>>        SEM <<
                                     f = new LitOperand(Type.intType, number);
+                                  >>
+    | dblNumber<<out dblNumber>>  SEM <<
+                                    f = new LitOperand(Type.doubleType, dblNumber);
                                   >>
     | ident<<out spix>>           SEM <<
                                     sp = new SrcPos();

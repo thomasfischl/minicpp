@@ -82,6 +82,16 @@ public class LitOperand : Operand
 
   public int val;
 
+  public double dblVal;
+
+  public LitOperand(Type type, double val)
+    : base(Kind.litOperandKind, null)
+  {
+    this.type = type;
+    this.dblVal = val;
+  } // ConstOperand
+
+
   public LitOperand(Type type, int val)
     : base(Kind.litOperandKind, null)
   {
@@ -263,13 +273,21 @@ public class BinaryOperator : Operator
     }
     else
     { // addOp, subOp, mulOp, divOp, modOp
-      if (left.type != Type.intType || right.type != Type.intType)
+
+      if (left.type == Type.intType && right.type == Type.intType)
       {
-        Errors.SemError(sp.line, sp.col, "operands of type integer expected");
-        this.type = Type.undefType;
+        this.type = Type.intType;
+      }
+      else if (left.type == Type.doubleType && right.type == Type.doubleType)
+      {
+        this.type = Type.doubleType;
       }
       else
-        this.type = Type.intType;
+      {
+        Errors.SemError(sp.line, sp.col, "operands of type integer or double expected");
+        this.type = Type.undefType;
+      }
+    
     } // else
   } // BinaryOperator
 
@@ -429,7 +447,7 @@ public class NewOperator : Operator
       Errors.SemError(sp.line, sp.col, "invalid type");
       return;
     } // if
-    if (noe.type != Type.intType)
+    if (noe.type != Type.intType && noe.type != Type.doubleType)
     {
       Errors.SemError(sp.line, sp.col, "invalid type");
       return;
@@ -755,7 +773,8 @@ public class InputStat : Stat
       Errors.SemError(sp.line, sp.col, "invalid symbol kind");
     if (vo.sy.type != Type.undefType &&
         vo.sy.type != Type.boolType &&
-        vo.sy.type != Type.intType)
+        vo.sy.type != Type.intType &&
+        vo.sy.type != Type.doubleType )
       Errors.SemError(sp.line, sp.col, "invalid type");
   } // InputStat
 
@@ -778,7 +797,9 @@ public class OutputStat : Stat
         Expr e = o as Expr;
         if (e != null &&
             e.type != Type.undefType &&
-            e.type != Type.boolType && e.type != Type.intType)
+            e.type != Type.boolType && 
+            e.type != Type.intType &&
+            e.type != Type.doubleType )
           Errors.SemError(sp.line, sp.col, "invalid type");
       }
       else if (o is String)
