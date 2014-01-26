@@ -108,6 +108,7 @@ KEYWORDS                          /*  1 - 15 */
   'const'.
   'cout'.
   'delete'.
+  'double'.
   'else'.
   'endl'.
   'false'.
@@ -143,13 +144,12 @@ TOKEN CLASSES                     /* 43 - 45 */
     .
 /*-------------------------------|---------------------------------------*/
   number <<out int val>> =
-      digit
-    { digit
-    }                             LEX <<
+    digit
+    { digit }                     LEX <<
                                     val = Convert.ToInt32(tokenStr);
                                   >>
     .
-    
+/*-------------------------------|---------------------------------------*/
   string<<out String str>> =      // string literals may contain
     '"'                           // all printable characters, but not '"'
     {                             // backslash '\' has no special meaning,
@@ -160,7 +160,16 @@ TOKEN CLASSES                     /* 43 - 45 */
                                     str = tokenStr.Substring(1, tokenStr.Length - 2);
                                   >>
     .
-
+/*-------------------------------|---------------------------------------*/
+  dblNumber<<out double val>> = 
+    digit
+    { digit }
+    '.'
+    digit
+    { digit }                     LEX <<
+                                    val = Convert.ToDouble(tokenStr);
+                                  >>
+    .
 NONTERMINALS 
 /*===============================|=======================================*/
 

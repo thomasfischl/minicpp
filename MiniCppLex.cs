@@ -76,19 +76,20 @@ public class MiniCppLex {
     EnterKeyword(  4, "const");
     EnterKeyword(  5, "cout");
     EnterKeyword(  6, "delete");
-    EnterKeyword(  7, "else");
-    EnterKeyword(  8, "endl");
-    EnterKeyword(  9, "false");
-    EnterKeyword( 10, "if");
-    EnterKeyword( 11, "int");
-    EnterKeyword( 12, "new");
-    EnterKeyword( 13, "return");
-    EnterKeyword( 14, "true");
-    EnterKeyword( 15, "void");
-    EnterKeyword( 16, "while");
-    EnterKeyword( 17, "switch");
-    EnterKeyword( 18, "case");
-    EnterKeyword( 19, "default");
+    EnterKeyword(  7, "double");
+    EnterKeyword(  8, "else");
+    EnterKeyword(  9, "endl");
+    EnterKeyword( 10, "false");
+    EnterKeyword( 11, "if");
+    EnterKeyword( 12, "int");
+    EnterKeyword( 13, "new");
+    EnterKeyword( 14, "return");
+    EnterKeyword( 15, "true");
+    EnterKeyword( 16, "void");
+    EnterKeyword( 17, "while");
+    EnterKeyword( 18, "switch");
+    EnterKeyword( 19, "case");
+    EnterKeyword( 20, "default");
     // --- initialize name data structures  ---
     nHt.Clear();
     nl.Clear();
@@ -125,12 +126,12 @@ public class MiniCppLex {
     public int[] startTab = {
           0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
           0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
-          0, 31, 28,  0,  0,  4, 15,  0,  7,  8,  2, 32, 23, 33,  0,  3,
-         27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 25, 24, 34, 35, 36,  0,
+          0, 33, 27,  0,  0,  4, 15,  0,  7,  8,  2, 34, 23, 35,  0,  3,
+         31, 31, 31, 31, 31, 31, 31, 31, 31, 31, 25, 24, 36, 37, 38,  0,
           0, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26,
          26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26,  9,  0, 10,  0, 26,
-          0, 30, 30, 30, 30, 30, 30, 26, 30, 30, 26, 30, 30, 26, 30, 30,
-         26, 26, 30, 30, 30, 30, 30, 30, 26, 26, 26, 11, 13, 12,  0,  0,
+          0, 32, 32, 32, 32, 32, 32, 26, 32, 32, 26, 32, 32, 26, 32, 32,
+         26, 26, 32, 32, 32, 32, 32, 32, 26, 26, 26, 11, 13, 12,  0,  0,
           0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
           0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
           0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
@@ -307,37 +308,37 @@ public class MiniCppLex {
             tokenStrLen = 0;
             break;                      // EOF recognized
           case 2:
-            token = 22;
+            token = 23;
             break;                      // '*' recognized
           case 3:
-            token = 23;
+            token = 24;
             break;                      // '/' recognized
           case 4:
-            token = 24;
+            token = 25;
             break;                      // '%' recognized
           case 5:
-            token = 25;
+            token = 26;
             break;                      // '++' recognized
           case 6:
-            token = 26;
+            token = 27;
             break;                      // '--' recognized
           case 7:
-            token = 27;
+            token = 28;
             break;                      // '(' recognized
           case 8:
-            token = 28;
+            token = 29;
             break;                      // ')' recognized
           case 9:
-            token = 29;
+            token = 30;
             break;                      // '[' recognized
           case 10:
-            token = 30;
+            token = 31;
             break;                      // ']' recognized
           case 11:
-            token = 31;
+            token = 32;
             break;                      // '{' recognized
           case 12:
-            token = 32;
+            token = 33;
             break;                      // '}' recognized
           case 13:
             if (curCh == '|') {
@@ -349,7 +350,7 @@ public class MiniCppLex {
               break;
             } // else
           case 14:
-            token = 34;
+            token = 35;
             break;                      // '||' recognized
           case 15:
             if (curCh == '&') {
@@ -361,34 +362,34 @@ public class MiniCppLex {
               break;
             } // else
           case 16:
-            token = 35;
+            token = 36;
             break;                      // '&&' recognized
           case 17:
-            token = 36;
+            token = 37;
             break;                      // '==' recognized
           case 18:
-            token = 37;
+            token = 38;
             break;                      // '!=' recognized
           case 19:
-            token = 39;
+            token = 40;
             break;                      // '<=' recognized
           case 20:
-            token = 41;
+            token = 42;
             break;                      // '>=' recognized
           case 21:
-            token = 42;
+            token = 43;
             break;                      // '<<' recognized
           case 22:
-            token = 43;
+            token = 44;
             break;                      // '>>' recognized
           case 23:
-            token = 44;
+            token = 45;
             break;                      // ',' recognized
           case 24:
-            token = 46;
+            token = 47;
             break;                      // ';' recognized
           case 25:
-            token = 47;
+            token = 48;
             break;                      // ':' recognized
           case 26:
             if (Sets.member(curCh, lt.cls[0])) {
@@ -403,41 +404,63 @@ public class MiniCppLex {
               token = KeywordCheck();
               if (token >= 0)
                 break;                  // keyword recognized
-              token = 48;
+              token = 49;
               break;                    // ident recognized
             } // else
           case 27:
-            if (Sets.member(curCh, lt.cls[1])) {
+            if (Sets.member(curCh, lt.cls[2])) {
               state = 27;
               continue;
             } // if
-            else {
-              token = 49;
-              break;                    // number recognized
-            } // else
-          case 28:
-            if (Sets.member(curCh, lt.cls[2])) {
-              state = 28;
-              continue;
-            } // if
             else if (curCh == '\"') {
-              state = 29;
+              state = 28;
               continue;
             } // if
             else {
               HandleLexErr();
               break;
             } // else
-          case 29:
-            token = 50;
+          case 28:
+            token = 51;
             break;                      // string recognized
+          case 29:
+            if (Sets.member(curCh, lt.cls[1])) {
+              state = 30;
+              continue;
+            } // if
+            else {
+              HandleLexErr();
+              break;
+            } // else
           case 30:
+            if (Sets.member(curCh, lt.cls[1])) {
+              state = 30;
+              continue;
+            } // if
+            else {
+              token = 52;
+              break;                    // dblNumber recognized
+            } // else
+          case 31:
+            if (Sets.member(curCh, lt.cls[1])) {
+              state = 31;
+              continue;
+            } // if
+            else if (curCh == '.') {
+              state = 29;
+              continue;
+            } // if
+            else {
+              token = 50;
+              break;                    // number recognized
+            } // else
+          case 32:
             if (Sets.member(curCh, lt.cls[1])) {
               state = 26;
               continue;
             } // if
             else if (Sets.member(curCh, lt.cls[3])) {
-              state = 30;
+              state = 32;
               continue;
             } // if
             else if (Sets.member(curCh, lt.cls[4])) {
@@ -448,37 +471,37 @@ public class MiniCppLex {
               token = KeywordCheck();
               if (token >= 0)
                 break;                  // keyword recognized
-              token = 48;
+              token = 49;
               break;                    // ident recognized
             } // else
-          case 31:
+          case 33:
             if (curCh == '=') {
               state = 18;
               continue;
             } // if
             else {
-              token = 33;
+              token = 34;
               break;                    // '!' recognized
             } // else
-          case 32:
+          case 34:
             if (curCh == '+') {
               state = 5;
               continue;
             } // if
             else {
-              token = 20;
+              token = 21;
               break;                    // '+' recognized
             } // else
-          case 33:
+          case 35:
             if (curCh == '-') {
               state = 6;
               continue;
             } // if
             else {
-              token = 21;
+              token = 22;
               break;                    // '-' recognized
             } // else
-          case 34:
+          case 36:
             if (curCh == '<') {
               state = 21;
               continue;
@@ -488,19 +511,19 @@ public class MiniCppLex {
               continue;
             } // if
             else {
-              token = 38;
+              token = 39;
               break;                    // '<' recognized
             } // else
-          case 35:
+          case 37:
             if (curCh == '=') {
               state = 17;
               continue;
             } // if
             else {
-              token = 45;
+              token = 46;
               break;                    // '=' recognized
             } // else
-          case 36:
+          case 38:
             if (curCh == '=') {
               state = 20;
               continue;
@@ -510,7 +533,7 @@ public class MiniCppLex {
               continue;
             } // if
             else {
-              token = 40;
+              token = 41;
               break;                    // '>' recognized
             } // else
         } // switch
@@ -563,6 +586,11 @@ public class MiniCppLex {
     str = tokenStr.Substring(1, tokenStr.Length - 2);
 
   } // GETstringAttr
+  
+  public static void GETdblNumberAttr(out double val) {
+    val = Convert.ToDouble(tokenStr);
+
+  } // GETdblNumberAttr
 
 } // MiniCppLex
 
