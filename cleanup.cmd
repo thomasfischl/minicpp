@@ -2,7 +2,6 @@ del MiniCpp.exe
 del MiniCppLex.cs
 del MiniCppSem.cs
 del MiniCppSyn.cs
-del SymTab.cs
 
 del minicpp.pgt.lst
 del minicpp.sg.lst

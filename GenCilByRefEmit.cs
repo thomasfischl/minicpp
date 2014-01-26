@@ -47,10 +47,14 @@ public static class GenCilByRefEmit {
     typeof (Convert).GetMethod("ToBoolean", new[] {typeof (string)});
   private static readonly MethodInfo ConvertToInt =
     typeof (Convert).GetMethod("ToInt32", new[] {typeof (string)});
+  private static readonly MethodInfo ConvertToDouble =
+    typeof(Convert).GetMethod("ToDouble", new[] { typeof(string) });
   private static readonly MethodInfo WriteBoolToCout =
     typeof (Console).GetMethod("Write", new[] {typeof (bool)});
   private static readonly MethodInfo WriteIntToCout =
     typeof (Console).GetMethod("Write", new[] {typeof (int)});
+  private static readonly MethodInfo WriteDoubleToCout =
+    typeof(Console).GetMethod("Write", new[] { typeof(double) });
   private static readonly MethodInfo WriteStringToCout =
     typeof (Console).GetMethod("Write", new[] {typeof (string)});
   private static readonly MethodInfo WriteEndlToCout =
@@ -74,6 +78,8 @@ public static class GenCilByRefEmit {
         if (sy.init) {
           if (sy.type == Type.boolType)
             fieldBuilder.SetConstant(sy.val != 0);
+          else if(sy.type == Type.doubleType)
+            fieldBuilder.SetConstant(sy.dblVal);
           else
             fieldBuilder.SetConstant(sy.val);
         } // if
@@ -96,7 +102,9 @@ public static class GenCilByRefEmit {
         if (sy.init) {
           if (sy.type.IsPtrType() && sy.val == 0)
             ilGenerator.Emit(OpCodes.Ldnull);
-          else 
+          else if(sy.type.kind == Type.Kind.doubleKind)
+            ilGenerator.Emit(OpCodes.Ldc_R8, sy.dblVal);
+          else
             ilGenerator.Emit(OpCodes.Ldc_I4, sy.val);
           ilGenerator.Emit(OpCodes.Stloc, localBuilder);
         } // if
@@ -117,6 +125,10 @@ public static class GenCilByRefEmit {
         return typeof(int);
       case Type.Kind.intPtrKind:
         return typeof(int[]);
+      case Type.Kind.doubleKind:
+        return typeof(double);
+      case Type.Kind.doublePtrKind:
+        return typeof(double[]);
       default:
         throw new Exception("invalid type kind");
     } // switch
@@ -175,6 +187,8 @@ public static class GenCilByRefEmit {
     if (lo.type.kind == Type.Kind.boolKind ||
         lo.type.kind == Type.Kind.intKind)
       ilGenerator.Emit(OpCodes.Ldc_I4, lo.val);
+    else if (lo.type.kind == Type.Kind.doubleKind)
+      ilGenerator.Emit(OpCodes.Ldc_R8, lo.val);
     else if (lo.type.kind == Type.Kind.voidPtrKind &&
              lo.val == 0)
       ilGenerator.Emit(OpCodes.Ldnull);
@@ -185,7 +199,10 @@ public static class GenCilByRefEmit {
   private static void GenLoadVarOperand(VarOperand vo) {
     switch (vo.sy.kind) {
       case Symbol.Kind.constKind: // inline constants
-        ilGenerator.Emit(OpCodes.Ldc_I4, vo.sy.val);
+        if(vo.sy.type.kind == Type.Kind.doubleKind)
+          ilGenerator.Emit(OpCodes.Ldc_R8, vo.sy.val);
+        else
+          ilGenerator.Emit(OpCodes.Ldc_I4, vo.sy.val);
         break;
       case Symbol.Kind.varKind:
         if (vo.sy.level == 0) // global scope
@@ -535,6 +552,9 @@ public static class GenCilByRefEmit {
       case Type.Kind.intKind:
         ilGenerator.EmitCall(OpCodes.Call, ConvertToInt, System.Type.EmptyTypes);
         break;
+      case Type.Kind.doubleKind:
+        ilGenerator.EmitCall(OpCodes.Call, ConvertToDouble, System.Type.EmptyTypes);
+        break;
       default:
         throw new Exception("invalid type");
     } // switch
@@ -550,6 +570,8 @@ public static class GenCilByRefEmit {
           ilGenerator.EmitCall(OpCodes.Call, WriteBoolToCout, System.Type.EmptyTypes);
         else if (e.type == Type.intType)
           ilGenerator.EmitCall(OpCodes.Call, WriteIntToCout, System.Type.EmptyTypes);
+        else if (e.type == Type.doubleType)
+          ilGenerator.EmitCall(OpCodes.Call, WriteDoubleToCout, System.Type.EmptyTypes);
       } else if (o is String) {
         String str = o as String;
         if (str == "\n")
