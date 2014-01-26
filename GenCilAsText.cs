@@ -562,7 +562,7 @@ public static class GenCilAsText
       return;
     }
 
-    GenExpr(sb, s.e);
+    GenExpr(sb, s.expr);
 
     var defaultLabel = NewLabel();
     var endOfSwitchLabel = NewLabel();

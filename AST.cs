@@ -671,14 +671,14 @@ public class WhileStat : Stat
 public class SwitchStat : Stat
 {
 
-  public Expr e;
+  public Expr expr;
   public Stat caseStat;
   public Stat defaultStat;
 
   public SwitchStat(SrcPos sp, Expr e, Stat caseStat, Stat defaultStat)
     : base(Stat.Kind.switchStatKind, sp)
   {
-    this.e = e;
+    this.expr = e;
     this.caseStat = caseStat;
     this.defaultStat = defaultStat;
 

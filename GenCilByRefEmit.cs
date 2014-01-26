@@ -464,6 +464,61 @@ public static class GenCilByRefEmit {
     ilGenerator.MarkLabel(escapeLabel);
   } // GenWhileStat
 
+  private static void GenSwitchStat(SwitchStat s)
+  {
+    if (s.caseStat == null && s.defaultStat == null)
+    {
+      return;
+    }
+
+    GenExpr(s.expr);
+
+    Label defaultLabel = ilGenerator.DefineLabel();
+    Label endOfSwitchLabel = ilGenerator.DefineLabel();
+
+    var caseLabels = new System.Collections.Generic.Dictionary<Stat, Label>();
+    var caseStat = s.caseStat;
+
+    while (caseStat != null)
+    {
+      Label caseLabel = ilGenerator.DefineLabel();
+      caseLabels.Add(caseStat, caseLabel);
+
+      ilGenerator.Emit(OpCodes.Dup);
+      ilGenerator.Emit(OpCodes.Ldc_I4, ((CaseStat)caseStat).val);
+      ilGenerator.Emit(OpCodes.Beq_S, caseLabel);
+      caseStat = caseStat.next;
+    }
+
+    if (s.defaultStat != null)
+    {
+      ilGenerator.Emit(OpCodes.Br_S, defaultLabel);
+    }
+    else
+    {
+      ilGenerator.Emit(OpCodes.Br_S, endOfSwitchLabel);
+    }
+
+    BreakLabelStack.Push(endOfSwitchLabel);
+
+    caseStat = s.caseStat;
+    while (caseStat != null)
+    {
+      ilGenerator.MarkLabel(caseLabels[caseStat]);
+      GenStatList(((CaseStat)caseStat).stat);
+      caseStat = caseStat.next;
+    }
+
+    if (s.defaultStat != null)
+    {
+      ilGenerator.MarkLabel(defaultLabel);
+      GenStatList(s.defaultStat);
+    }
+
+    BreakLabelStack.Pop();
+    ilGenerator.MarkLabel(endOfSwitchLabel);
+  } // GenSwitchStat
+
   private static void GenBreakStat() {
     if (BreakLabelStack.Count < 1)
       throw new Exception("break with no loop around");
@@ -545,6 +600,9 @@ public static class GenCilByRefEmit {
           break;
         case Stat.Kind.whileStatKind:
           GenWhileStat(stat as WhileStat);
+          break;
+        case Stat.Kind.switchStatKind:
+          GenSwitchStat(stat as SwitchStat);
           break;
         case Stat.Kind.breakStatKind:
           GenBreakStat();

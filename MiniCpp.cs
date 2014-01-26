@@ -7,7 +7,7 @@
 
 #define GEN_SRC          // (en|dis)able gen. of source text (with symbol table dump)
 #define GEN_CIL_AS_TEXT  // (en|dis)able CIL text generation and assembling to exe
-#undef GEN_CIL_REF_EMIT // (en|dis)able CIL generation with Reflection.Emit
+#define GEN_CIL_REF_EMIT // (en|dis)able CIL generation with Reflection.Emit
 
 #undef VERIFY_ASSEMBLY  // (en|dis)able CIL verification with PEVerify.exe
 #undef MEASURE_TIME     // (en|dis)able time measurements for some phases
@@ -104,14 +104,14 @@ public class MiniCpp {
 
 #if GEN_CIL_AS_TEXT // CIL generation to il-file and assembling to exe
       StartTimer();
-      GenCilAsText.GenerateAssembly(path, moduleName);
+      GenCilAsText.GenerateAssembly(path, moduleName + ".text");
       WriteElapsedTime("GenCilAsText");      
       VerifyAssembly(path, moduleName);
 #endif // GEN_CIL_AS_TEXT
 
 #if GEN_CIL_REF_EMIT // CIL generation with Reflection.Emit
       StartTimer();
-      GenCilByRefEmit.GenerateAssembly(path, moduleName);
+      GenCilByRefEmit.GenerateAssembly(path, moduleName+ ".emit");
       WriteElapsedTime("GenCilByReflectionEmit");
       VerifyAssembly(path, moduleName);
 #endif

@@ -114,7 +114,7 @@ public class GenSrcText {
         break;
       case Stat.Kind.switchStatKind:
         SwitchStat ss = (SwitchStat)stat;
-        genMcpp.WriteLine(Indent() + "switch (" + ss.e + ") {");
+        genMcpp.WriteLine(Indent() + "switch (" + ss.expr + ") {");
         IncIndent();
         WriteStatList(ss.caseStat);
         if (ss.defaultStat != null)

@@ -1,39 +1,61 @@
 void main(){
-  int a = 3;
+  int a = 2;
   int b = 1;
   int c = 1;
   int i;
   
+  cout << "------------ case 1 -----------------" << endl;
   switch(1){
   }
+  cout << "Success" << endl; 
 
+  cout << "------------ case 2 -----------------" << endl;
   switch(1 + 2){
-    case 1 : {break;}
+    case 1 : {
+        cout << "Failure" << endl; 
+        break;        
+      }
     case 3 : 
-       cout << "Case 3!!!" << endl; 
+       cout << "Success" << endl; 
        break;
   }
-    
+  
+  cout << "------------ case 3 -----------------" << endl;  
   switch(1 + b / c) {
     case 2: 
+      cout << "Success" << endl;
     default:
-       break; 
-       break; 
+       cout << "Success" << endl; 
        break;
   }
   
+  cout << "------------ case 4 -----------------" << endl;
   switch(a){
-    case 1: break;
-    case 2: a = 3;
-    case 3: b = 10 + 4 * 2; break;
-    default: {break; break; break;}
+    case 1: 
+      cout << "Failure" << endl; 
+      break;
+    case 2: 
+      a = 3;
+      cout << "Success" << endl;
+    case 3: 
+      b = a + 1;
+      cout << "Success 4 = " << b << endl;
+      break;
+    default: {
+        cout << "Failure" << endl; 
+        break; 
+        break; 
+      }
   }
   
+  cout << "------------ case 5 -----------------" << endl;
   switch(4){
     case 4: 
-        i = 0;
-        cout << "Case 4: " << i << endl; 
-    default: {break; break; break;}
-  }  
+        break;
+        cout << "Failure" << endl;
+    default: 
+      cout << "Failure" << endl;
+  }
+  cout << "Success" << endl;  
 
 }
