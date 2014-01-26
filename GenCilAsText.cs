@@ -117,6 +117,8 @@ public static class GenCilAsText
       {
         if (sy.type.IsPtrType() && sy.val == 0)
           sb.Append("    ldnull\n");
+        else if(sy.type.kind == Type.Kind.doubleKind)
+          sb.Append("    ldc.r8 " + Convert.ToString(sy.dblVal, System.Globalization.CultureInfo.InvariantCulture.NumberFormat) + "\n");
         else
           sb.Append("    ldc.i4 " + sy.val + "\n");
         sb.Append("    stloc  " + sy.addr + "\n");
@@ -143,6 +145,12 @@ public static class GenCilAsText
         break;
       case Type.Kind.intPtrKind:
         sb.Append("int32[] ");
+        break;
+      case Type.Kind.doubleKind:
+        sb.Append("float64 ");
+        break;
+      case Type.Kind.doublePtrKind:
+        sb.Append("float64[] ");
         break;
       default:
         throw new Exception("invalid type kind");
@@ -190,6 +198,8 @@ public static class GenCilAsText
     if (lo.type.kind == Type.Kind.boolKind ||
         lo.type.kind == Type.Kind.intKind)
       sb.Append("    ldc.i4 " + lo.val + "\n");
+    else if (lo.type.kind == Type.Kind.doubleKind)
+      sb.Append("    ldc.r8 " + lo.dblVal + "\n");
     else if (lo.type.kind == Type.Kind.voidPtrKind &&
              lo.val == 0)
       sb.Append("    ldnull\n");
@@ -202,7 +212,11 @@ public static class GenCilAsText
     switch (vo.sy.kind)
     {
       case Symbol.Kind.constKind:
-        sb.Append("    ldc.i4 " + vo.sy.val + "\n");
+        if(vo.type.kind == Type.Kind.doubleKind)
+          sb.Append("    ldc.r8 " + vo.sy.val + "\n");
+        else
+          sb.Append("    ldc.i4 " + vo.sy.val + "\n");
+
         break;
       case Symbol.Kind.varKind:
         if (vo.sy.level == 0)
@@ -631,6 +645,9 @@ public static class GenCilAsText
       case Type.Kind.intKind:
         sb.Append("    call void BasicIO::ReadFromCin(int32&)\n");
         break;
+      case Type.Kind.doubleKind:
+        sb.Append("    call void BasicIO::ReadFromCin(float64&)\n");
+        break;
       default:
         throw new Exception("invalid type");
     } // switch
@@ -750,8 +767,14 @@ public static class GenCilAsText
         sb.Append("    ldc.i4 0\n");
         sb.Append("    ret\n");
         break;
+      case Type.Kind.doubleKind:
+        sb.Append("DummyReturn:\n");
+        sb.Append("    ldc.r8 0\n");
+        sb.Append("    ret\n");
+        break;
       case Type.Kind.boolPtrKind:
       case Type.Kind.intPtrKind:
+      case Type.Kind.doublePtrKind:
         sb.Append("DummyReturn:\n");
         sb.Append("    ldnull\n");
         sb.Append("    ret\n");

@@ -15,6 +15,6 @@ void main(){
   cout << "e: " << e << endl;
 }
 
-double add(double a, double b){
+double addMethod(double a, double b){
   return a + b;
 }

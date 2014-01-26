@@ -55,6 +55,18 @@
     stind.i4
     ret
   } // .method
+  
+  .method public hidebysig static void ReadFromCin([out] float64& i) cil managed {
+    .maxstack  2
+    .locals init (string V_0)
+    call       string [mscorlib]System.Console::ReadLine()
+    stloc.0
+    ldarg.0
+    ldloc.0
+    call       float64 [mscorlib]System.Convert::ToDouble(string)
+    stind.r8
+    ret
+  } // .method
 
   .method public hidebysig static void WriteToCout(bool b) cil managed {
     .maxstack  8
@@ -67,6 +79,13 @@
     .maxstack  8
     ldarg.0
     call       void [mscorlib]System.Console::Write(int32)
+    ret
+  } // .method
+
+  .method public hidebysig static void WriteToCout(float64 i) cil managed {
+    .maxstack  8
+    ldarg.0
+    call       void [mscorlib]System.Console::Write(float64)
     ret
   } // .method
   
